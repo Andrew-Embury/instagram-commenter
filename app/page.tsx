@@ -1,101 +1,131 @@
-import Image from "next/image";
+'use client';
+
+import { useState, useTransition } from 'react';
+import { Menu, MessageSquare } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Textarea } from '@/components/ui/textarea';
+
+// Server action to handle form submission
+async function submitComment(input: string) {
+  const webhookUrl =
+    'https://theuncommonspirit.app.n8n.cloud/webhook-test/instacomments';
+
+  try {
+    const response = await fetch(webhookUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ input }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to send data to the webhook');
+    }
+
+    // Parse the response from the webhook
+    const responseData = await response.json();
+    return responseData.output; // Assuming the response has an 'output' field
+  } catch (error) {
+    console.error('Error in submitComment:', error);
+    throw error;
+  }
+}
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const [input, setInput] = useState('');
+  const [output, setOutput] = useState('');
+  const [isPending, startTransition] = useTransition();
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    startTransition(async () => {
+      try {
+        const result = await submitComment(input);
+        setOutput(result); // Set the output state with the response
+        setInput('');
+      } catch (error) {
+        console.error('Error submitting comment:', error);
+      }
+    });
+  };
+
+  return (
+    <div className='flex h-screen bg-gray-100'>
+      {/* Sidebar for larger screens */}
+      <aside className='hidden w-64 bg-white p-4 shadow-md lg:block'>
+        <nav>
+          <h2 className='mb-4 text-xl font-bold'>Dashboard</h2>
+          <ul>
+            <li>
+              <a
+                href='#'
+                className='flex items-center rounded-lg p-2 text-gray-900 hover:bg-gray-200'
+              >
+                <MessageSquare className='mr-2 h-5 w-5' />
+                Comments
+              </a>
+            </li>
+          </ul>
+        </nav>
+      </aside>
+
+      {/* Main content */}
+      <main className='flex flex-1 flex-col'>
+        {/* Header */}
+        <header className='bg-white p-4 shadow-md lg:hidden'>
+          <div className='flex items-center justify-between'>
+            <h1 className='text-xl font-bold'>Dashboard</h1>
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant='ghost' size='icon'>
+                  <Menu className='h-6 w-6' />
+                  <span className='sr-only'>Toggle navigation menu</span>
+                </Button>
+              </SheetTrigger>
+              <SheetContent side='left' className='w-64'>
+                <nav>
+                  <h2 className='mb-4 text-xl font-bold'>Dashboard</h2>
+                  <ul>
+                    <li>
+                      <a
+                        href='#'
+                        className='flex items-center rounded-lg p-2 text-gray-900 hover:bg-gray-200'
+                      >
+                        <MessageSquare className='mr-2 h-5 w-5' />
+                        Comments
+                      </a>
+                    </li>
+                  </ul>
+                </nav>
+              </SheetContent>
+            </Sheet>
+          </div>
+        </header>
+
+        {/* Page content */}
+        <div className='flex-1 overflow-auto p-4'>
+          <h2 className='mb-4 text-2xl font-bold'>Comments</h2>
+          <form onSubmit={handleSubmit} className='mb-4 space-y-4'>
+            <Input
+              type='text'
+              placeholder='Enter your comment...'
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+            <Button type='submit' disabled={isPending}>
+              {isPending ? 'Submitting...' : 'Submit'}
+            </Button>
+          </form>
+          <div className='rounded-lg bg-white p-4 shadow-md'>
+            <h3 className='mb-2 font-semibold'>AI Response:</h3>
+            <Textarea readOnly value={output} className='h-32 resize-none' />
+          </div>
         </div>
       </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
     </div>
   );
 }
