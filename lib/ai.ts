@@ -1,7 +1,63 @@
-export async function generateAIResponse(comment: string) {
-  // Implement your AI response generation logic here
-  // This could involve calling an external API or using a local model
-  return `Thank you for your comment: "${comment}". We appreciate your feedback!`;
+import axios from 'axios';
+
+interface WebhookResponse {
+  output: string; // Change this from 'reply' to 'output'
+}
+
+async function callWebhook(caption: string, message: string): Promise<string> {
+  const webhookUrl = process.env.NEXT_PUBLIC_WEBHOOK_URL;
+  const webhookToken = process.env.NEXT_PUBLIC_WEBHOOK_TOKEN;
+
+  if (!webhookUrl || !webhookToken) {
+    console.error(
+      'NEXT_PUBLIC_WEBHOOK_URL or NEXT_PUBLIC_WEBHOOK_TOKEN is not set in environment variables'
+    );
+    return '';
+  }
+
+  try {
+    const response = await axios.post<WebhookResponse>(
+      webhookUrl,
+      {
+        message: message,
+        caption: caption,
+      },
+      {
+        headers: {
+          'x-webhook-token': webhookToken,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    return response.data.output; // Change this from 'reply' to 'output'
+  } catch (error) {
+    console.error('Error calling webhook:', error);
+    return '';
+  }
+}
+
+export async function generateAIResponse(
+  commentText: string,
+  postCaption: string
+) {
+  const response = await fetch('/api/generate-ai-response', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      message: commentText,
+      caption: postCaption || '', // Ensure caption is always a string
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to generate AI response');
+  }
+
+  const data = await response.json();
+  return data.reply;
 }
 
 export async function postAIResponse(commentId: string, response: string) {

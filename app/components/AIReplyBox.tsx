@@ -1,37 +1,62 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { generateAIReply, postComment } from '../lib/api';
+import { generateAIResponse, postAIResponse } from '@/lib/ai';
 
 interface AIReplyBoxProps {
-  postId: string;
-  parentCommentId: string;
+  initialReply: string;
+  onPost: (editedReply: string) => void;
+  commentText: string;
+  postCaption: string;
+  parentCommentId?: string;
 }
 
-const AIReplyBox: React.FC<AIReplyBoxProps> = ({ postId, parentCommentId }) => {
-  const [aiReply, setAiReply] = useState('');
+const AIReplyBox: React.FC<AIReplyBoxProps> = ({
+  initialReply,
+  onPost,
+  commentText,
+  postCaption,
+  parentCommentId,
+}) => {
+  const [aiReply, setAiReply] = useState(initialReply);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchAIReply = async () => {
       setIsLoading(true);
-      const reply = await generateAIReply(postId, parentCommentId);
-      setAiReply(reply);
-      setIsLoading(false);
+      setError(null);
+      try {
+        const reply = await generateAIResponse(commentText, postCaption);
+        console.log('AI Reply received:', reply);
+        setAiReply(reply);
+      } catch (err) {
+        console.error('Error fetching AI reply:', err);
+        setError('Failed to generate AI reply');
+      } finally {
+        setIsLoading(false);
+      }
     };
 
     fetchAIReply();
-  }, [postId, parentCommentId]);
+  }, [commentText, postCaption]);
 
   const handlePostReply = async () => {
-    await postComment(postId, parentCommentId, aiReply);
-    // Optionally, you can add logic here to refresh the comments or update the UI
+    try {
+      await postAIResponse(parentCommentId || '', aiReply);
+      onPost(aiReply);
+    } catch (err) {
+      console.error('Error posting AI reply:', err);
+      setError('Failed to post AI reply');
+    }
   };
 
   return (
     <div className='ai-reply-box'>
       {isLoading ? (
         <p>Generating AI reply...</p>
+      ) : error ? (
+        <p className='text-red-500'>{error}</p>
       ) : (
         <>
           <textarea

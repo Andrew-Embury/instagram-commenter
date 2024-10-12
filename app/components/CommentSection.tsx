@@ -1,18 +1,21 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import CommentThread from './CommentThread';
 import { InstagramComment } from '@/types/instagram';
 import { fetchInstagramComments } from '@/lib/instagram';
+import { generateAIResponse, postAIResponse } from '@/lib/ai';
 
 interface CommentSectionProps {
   initialComments: InstagramComment[];
   postId: string;
+  postCaption: string;
 }
 
 const CommentSection: React.FC<CommentSectionProps> = ({
   initialComments,
   postId,
+  postCaption,
 }) => {
   const [comments, setComments] = useState<InstagramComment[]>(initialComments);
   const [nextCursor, setNextCursor] = useState<string | undefined>(undefined);
@@ -35,6 +38,16 @@ const CommentSection: React.FC<CommentSectionProps> = ({
     setIsLoading(false);
   };
 
+  const handlePostAIReply = async (commentId: string, editedReply: string) => {
+    try {
+      await postAIResponse(commentId, editedReply);
+      console.log('AI reply posted successfully');
+      // You might want to refresh the comments here or update the local state
+    } catch (error) {
+      console.error('Failed to post AI response:', error);
+    }
+  };
+
   const topLevelComments = comments.filter(
     (comment) =>
       !comments.some((c) => c.replies?.some((reply) => reply.id === comment.id))
@@ -47,7 +60,13 @@ const CommentSection: React.FC<CommentSectionProps> = ({
   return (
     <div>
       {sortedTopLevelComments.map((comment) => (
-        <CommentThread key={comment.id} comment={comment} postId={postId} />
+        <CommentThread
+          key={comment.id}
+          comment={comment}
+          postId={postId}
+          postCaption={postCaption}
+          onPostAIReply={handlePostAIReply}
+        />
       ))}
       {nextCursor && (
         <button
