@@ -13,7 +13,10 @@ async function testWebhook() {
   try {
     const response = await axios.post(
       webhookUrl,
-      { message: 'This is a test' },
+      {
+        message: 'i love the new colours',
+        caption: 'look at our new logo',
+      },
       {
         headers: {
           'x-webhook-token': webhookToken,
