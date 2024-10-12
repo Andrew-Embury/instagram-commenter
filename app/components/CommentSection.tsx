@@ -18,8 +18,6 @@ const CommentSection: React.FC<CommentSectionProps> = ({
   );
 
   useEffect(() => {
-    console.log('All comments:', comments);
-
     // Create a set of all reply IDs
     const replyIds = new Set(
       comments.flatMap(
@@ -37,8 +35,6 @@ const CommentSection: React.FC<CommentSectionProps> = ({
     );
 
     setTopLevelComments(sortedTopLevel);
-
-    console.log('Sorted top-level comments:', sortedTopLevel);
   }, [comments]);
 
   return (

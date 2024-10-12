@@ -1,17 +1,18 @@
 'use client';
 
 import { useState } from 'react';
-import { Menu, MessageSquare, Image as ImageIcon } from 'lucide-react';
+import { Menu, Image as ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { ReactNode } from 'react';
 
 type NavLinkProps = {
   icon: ReactNode;
   children: ReactNode;
   href: string;
+  onClick: () => void;
 };
 
 export default function DashboardLayout({
@@ -20,13 +21,19 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const [isOpen, setIsOpen] = useState(false);
 
-  const NavLink = ({ icon, children, href }: NavLinkProps) => (
+  const NavLink = ({ icon, children, href, onClick }: NavLinkProps) => (
     <Link
       href={href}
       className={`flex items-center rounded-lg p-2 text-gray-900 hover:bg-gray-200 ${
         pathname === href ? 'bg-gray-200' : ''
       }`}
+      onClick={() => {
+        onClick();
+        setIsOpen(false);
+      }}
     >
       {icon}
       {children}
@@ -41,6 +48,7 @@ export default function DashboardLayout({
           <NavLink
             href='/dashboard/posts'
             icon={<ImageIcon className='mr-2 h-5 w-5' />}
+            onClick={() => router.push('/dashboard/posts')}
           >
             Posts
           </NavLink>
@@ -62,14 +70,14 @@ export default function DashboardLayout({
         <header className='bg-white p-4 shadow-md lg:hidden'>
           <div className='flex items-center justify-between'>
             <h1 className='text-xl font-bold'>Dashboard</h1>
-            <Sheet>
+            <Sheet open={isOpen} onOpenChange={setIsOpen}>
               <SheetTrigger asChild>
                 <Button variant='ghost' size='icon'>
                   <Menu className='h-6 w-6' />
                   <span className='sr-only'>Toggle navigation menu</span>
                 </Button>
               </SheetTrigger>
-              <SheetContent side='left' className='w-64'>
+              <SheetContent side='left' className='w-64 p-4'>
                 <Navigation />
               </SheetContent>
             </Sheet>

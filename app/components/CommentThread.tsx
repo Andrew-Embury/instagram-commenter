@@ -16,9 +16,6 @@ const CommentThread: React.FC<CommentThreadProps> = ({
   replies,
   postId,
 }) => {
-  console.log(`CommentThread for comment ${comment.id}`);
-  console.log('Replies:', replies);
-
   const sortedReplies = [...replies].sort(
     (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
   );

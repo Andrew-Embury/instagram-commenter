@@ -3,11 +3,11 @@ import { fetchInstagramPost, fetchInstagramComments } from '@/lib/instagram';
 import { Post } from '@/types/instagram';
 import Image from 'next/image';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
-import { MessageSquare, Heart } from 'lucide-react';
+import { Heart } from 'lucide-react';
 import dynamic from 'next/dynamic';
 
 const CommentSection = dynamic(
-  () => import('../../../components/CommentSection'),
+  () => import('@/app/components/CommentSection'),
   {
     ssr: false,
   }
@@ -51,13 +51,9 @@ export default async function PostPage({
         </CardContent>
         <CardFooter className='flex justify-between items-center p-4'>
           <p className='text-sm text-gray-500'>{post.caption}</p>
-          <div className='flex space-x-4'>
-            <span className='flex items-center'>
-              <Heart className='w-4 h-4 mr-1' /> {post.like_count}
-            </span>
-            <span className='flex items-center'>
-              <MessageSquare className='w-4 h-4 mr-1' /> {post.comments_count}
-            </span>
+          <div className='flex items-center'>
+            <Heart className='w-4 h-4 mr-1' />
+            {post.likes}
           </div>
         </CardFooter>
       </Card>
