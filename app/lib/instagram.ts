@@ -27,7 +27,7 @@ export async function fetchInstagramPost(postId: string): Promise<Post> {
     imageUrl: data.media_url,
     caption: data.caption,
     likes: data.like_count,
-    comments: totalCommentCount,
+    //comments: totalCommentCount,
   };
 
   console.log('Transformed post object:', post);
