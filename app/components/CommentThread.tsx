@@ -29,10 +29,16 @@ const CommentThread: React.FC<CommentThreadProps> = ({
   const renderReplies = (replies: InstagramComment[] | undefined) => {
     if (!replies || replies.length === 0) return null;
 
-    return replies.map((reply, index) => (
+    // Sort replies by timestamp, oldest first
+    const sortedReplies = [...replies].sort(
+      (a, b) =>
+        new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+    );
+
+    return sortedReplies.map((reply, index) => (
       <div key={reply.id} className='ml-8 mt-2'>
         <Comment comment={reply} />
-        {index === replies.length - 1 && (
+        {index === sortedReplies.length - 1 && (
           <AIReplyBox
             initialReply=''
             onPost={(editedReply: string) =>
@@ -59,7 +65,7 @@ const CommentThread: React.FC<CommentThreadProps> = ({
               onPostAIReply(comment.id, editedReply)
             }
             commentText={getCommentText(comment)}
-            postCaption={postCaption} // Ensure this is passed
+            postCaption={postCaption}
             parentCommentId={comment.id}
           />
         </div>
