@@ -1,19 +1,37 @@
+import React from 'react';
 import { fetchInstagramPost, fetchInstagramComments } from '@/lib/instagram';
-import CommentsClient from '@/components/CommentsClient';
-import AIRepliesClient from '@/components/AIRepliesClient';
 import { Post } from '@/types/instagram';
 import Image from 'next/image';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { MessageSquare, Heart } from 'lucide-react';
+import dynamic from 'next/dynamic';
+
+const CommentSection = dynamic(
+  () => import('../../../components/CommentSection'),
+  {
+    ssr: false,
+  }
+);
 
 export default async function PostPage({
   params,
 }: {
   params: { postId: string };
 }) {
-  const post: Post = await fetchInstagramPost(params.postId);
-  const comments = await fetchInstagramComments(params.postId);
+  let post: Post;
+  let comments;
+
+  try {
+    post = await fetchInstagramPost(params.postId);
+    comments = await fetchInstagramComments(params.postId);
+  } catch (error) {
+    console.error('Error fetching post or comments:', error);
+    return <div>Error loading post. Please try again later.</div>;
+  }
+
+  if (!post || !post.imageUrl) {
+    return <div>Post not found or media not available.</div>;
+  }
 
   return (
     <div className='space-y-6'>
@@ -23,7 +41,7 @@ export default async function PostPage({
           <div className='relative aspect-square w-full'>
             <Image
               src={post.imageUrl}
-              alt={post.caption}
+              alt={post.caption || 'Instagram post'}
               fill
               sizes='(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw'
               style={{ objectFit: 'cover' }}
@@ -35,27 +53,17 @@ export default async function PostPage({
           <p className='text-sm text-gray-500'>{post.caption}</p>
           <div className='flex space-x-4'>
             <span className='flex items-center'>
-              <Heart className='w-4 h-4 mr-1' /> {post.likes}
+              <Heart className='w-4 h-4 mr-1' /> {post.like_count}
             </span>
             <span className='flex items-center'>
-              <MessageSquare className='w-4 h-4 mr-1' /> {post.comments}
+              <MessageSquare className='w-4 h-4 mr-1' /> {post.comments_count}
             </span>
           </div>
         </CardFooter>
       </Card>
 
-      <Tabs defaultValue='all-comments'>
-        <TabsList>
-          <TabsTrigger value='all-comments'>All Comments</TabsTrigger>
-          <TabsTrigger value='ai-replies'>AI Replies</TabsTrigger>
-        </TabsList>
-        <TabsContent value='all-comments'>
-          <CommentsClient initialComments={comments} postId={params.postId} />
-        </TabsContent>
-        <TabsContent value='ai-replies'>
-          <AIRepliesClient initialComments={comments} postId={params.postId} />
-        </TabsContent>
-      </Tabs>
+      <h2>Comments</h2>
+      <CommentSection comments={comments} postId={params.postId} />
     </div>
   );
 }
