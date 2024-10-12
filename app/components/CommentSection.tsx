@@ -1,52 +1,63 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import CommentThread from './CommentThread';
 import { InstagramComment } from '@/types/instagram';
+import { fetchInstagramComments } from '@/lib/instagram';
 
 interface CommentSectionProps {
-  comments: InstagramComment[];
+  initialComments: InstagramComment[];
   postId: string;
 }
 
 const CommentSection: React.FC<CommentSectionProps> = ({
-  comments,
+  initialComments,
   postId,
 }) => {
-  const [topLevelComments, setTopLevelComments] = useState<InstagramComment[]>(
-    []
+  const [comments, setComments] = useState<InstagramComment[]>(initialComments);
+  const [nextCursor, setNextCursor] = useState<string | undefined>(undefined);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const loadMoreComments = async () => {
+    if (isLoading || !nextCursor) return;
+
+    setIsLoading(true);
+    try {
+      const { comments: newComments, next } = await fetchInstagramComments(
+        postId,
+        nextCursor
+      );
+      setComments((prevComments) => [...prevComments, ...newComments]);
+      setNextCursor(next);
+    } catch (error) {
+      console.error('Error fetching more comments:', error);
+    }
+    setIsLoading(false);
+  };
+
+  const topLevelComments = comments.filter(
+    (comment) =>
+      !comments.some((c) => c.replies?.some((reply) => reply.id === comment.id))
   );
 
-  useEffect(() => {
-    // Create a set of all reply IDs
-    const replyIds = new Set(
-      comments.flatMap(
-        (comment) => comment.replies?.map((reply) => reply.id) || []
-      )
-    );
-
-    // Filter out top-level comments (those that are not in the replyIds set)
-    const topLevel = comments.filter((comment) => !replyIds.has(comment.id));
-
-    // Sort top-level comments in chronological order (oldest first)
-    const sortedTopLevel = topLevel.sort(
-      (a, b) =>
-        new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-    );
-
-    setTopLevelComments(sortedTopLevel);
-  }, [comments]);
+  const sortedTopLevelComments = topLevelComments.sort(
+    (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+  );
 
   return (
     <div>
-      {topLevelComments.map((comment) => (
-        <CommentThread
-          key={comment.id}
-          comment={comment}
-          replies={comment.replies || []}
-          postId={postId}
-        />
+      {sortedTopLevelComments.map((comment) => (
+        <CommentThread key={comment.id} comment={comment} postId={postId} />
       ))}
+      {nextCursor && (
+        <button
+          onClick={loadMoreComments}
+          disabled={isLoading}
+          className='mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-blue-300'
+        >
+          {isLoading ? 'Loading...' : 'Load More Comments'}
+        </button>
+      )}
     </div>
   );
 };

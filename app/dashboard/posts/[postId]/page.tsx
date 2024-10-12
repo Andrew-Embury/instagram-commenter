@@ -19,11 +19,12 @@ export default async function PostPage({
   params: { postId: string };
 }) {
   let post: Post;
-  let comments;
+  let initialComments;
 
   try {
     post = await fetchInstagramPost(params.postId);
-    comments = await fetchInstagramComments(params.postId);
+    const { comments } = await fetchInstagramComments(params.postId);
+    initialComments = comments;
   } catch (error) {
     console.error('Error fetching post or comments:', error);
     return <div>Error loading post. Please try again later.</div>;
@@ -59,7 +60,10 @@ export default async function PostPage({
       </Card>
 
       <h2>Comments</h2>
-      <CommentSection comments={comments} postId={params.postId} />
+      <CommentSection
+        initialComments={initialComments}
+        postId={params.postId}
+      />
     </div>
   );
 }

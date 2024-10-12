@@ -7,26 +7,17 @@ import { InstagramComment } from '@/types/instagram';
 
 interface CommentThreadProps {
   comment: InstagramComment;
-  replies: InstagramComment[];
   postId: string;
 }
 
-const CommentThread: React.FC<CommentThreadProps> = ({
-  comment,
-  replies,
-  postId,
-}) => {
-  const sortedReplies = [...replies].sort(
-    (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-  );
+const CommentThread: React.FC<CommentThreadProps> = ({ comment, postId }) => {
+  const renderReplies = (replies: InstagramComment[] | undefined) => {
+    if (!replies || replies.length === 0) return null;
 
-  const renderReplies = (replyComments: InstagramComment[]) => {
-    return replyComments.map((reply) => (
+    return replies.map((reply) => (
       <div key={reply.id} className='ml-8 mt-2'>
         <Comment comment={reply} />
-        {reply.replies &&
-          reply.replies.length > 0 &&
-          renderReplies(reply.replies)}
+        {renderReplies(reply.replies)}
       </div>
     ));
   };
@@ -34,16 +25,9 @@ const CommentThread: React.FC<CommentThreadProps> = ({
   return (
     <div className='comment-thread mb-4'>
       <Comment comment={comment} />
-      {renderReplies(sortedReplies)}
+      {renderReplies(comment.replies)}
       <div className='ml-8 mt-2'>
-        <AIReplyBox
-          postId={postId}
-          parentCommentId={
-            sortedReplies.length > 0
-              ? sortedReplies[sortedReplies.length - 1].id
-              : comment.id
-          }
-        />
+        <AIReplyBox postId={postId} parentCommentId={comment.id} />
       </div>
     </div>
   );

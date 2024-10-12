@@ -50,15 +50,20 @@ export async function fetchInstagramPost(postId: string): Promise<Post> {
 }
 
 export async function fetchInstagramComments(
-  postId: string
-): Promise<InstagramComment[]> {
+  postId: string,
+  after?: string
+): Promise<{ comments: InstagramComment[]; next?: string }> {
   if (!ACCESS_TOKEN) {
     throw new Error('Instagram access token is not set');
   }
 
-  const response = await fetch(
-    `${INSTAGRAM_API_BASE_URL}/${postId}/comments?fields=id,text,username,timestamp,replies{id,text,username,timestamp}&access_token=${ACCESS_TOKEN}`
-  );
+  let url = `${INSTAGRAM_API_BASE_URL}/${postId}/comments?fields=id,text,username,timestamp,replies{id,text,username,timestamp}&limit=25&access_token=${ACCESS_TOKEN}`;
+
+  if (after) {
+    url += `&after=${after}`;
+  }
+
+  const response = await fetch(url);
 
   if (!response.ok) {
     throw new Error('Failed to fetch Instagram comments');
@@ -81,5 +86,8 @@ export async function fetchInstagramComments(
       : [],
   }));
 
-  return comments;
+  return {
+    comments,
+    next: data.paging?.cursors?.after,
+  };
 }

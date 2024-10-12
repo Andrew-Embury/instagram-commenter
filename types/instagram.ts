@@ -3,6 +3,7 @@ export interface InstagramComment {
   text: string;
   timestamp: string;
   username: string;
+  parent_id?: string;
   replies?: InstagramComment[];
 }
 
