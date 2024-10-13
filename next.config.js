@@ -1,12 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  reactStrictMode: true,
   images: {
-    remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: '**.cdninstagram.com',
-      },
-    ],
+    domains: ['scontent-iad3-1.cdninstagram.com'],
   },
 };
 

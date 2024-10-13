@@ -7,12 +7,10 @@ interface CommentProps {
 
 const Comment: React.FC<CommentProps> = ({ comment }) => {
   return (
-    <div className='comment'>
-      <p className='font-bold'>{comment.username}</p>
-      <p>{comment.text}</p>
-      <p className='text-sm text-gray-500'>
-        {new Date(comment.timestamp).toLocaleString()}
-      </p>
+    <div className='flex flex-col'>
+      <p className='text-sm font-semibold text-gray-800'>{comment.username}</p>
+      <p className='text-sm text-gray-600'>{comment.text}</p>
+      <p className='text-xs text-gray-400 mt-1'>{comment.timestamp}</p>
     </div>
   );
 };

@@ -7,14 +7,7 @@ import { Post } from '@/types/instagram';
 import Image from 'next/image';
 import { Card, CardContent } from '@/app/components/ui/card';
 import { Heart } from 'lucide-react';
-import dynamic from 'next/dynamic';
-
-const CommentSection = dynamic(
-  () => import('@/app/components/CommentSection'),
-  {
-    ssr: false,
-  }
-);
+import CommentSection from '@/app/components/CommentSection';
 
 export default async function PostPage({
   params,

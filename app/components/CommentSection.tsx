@@ -1,30 +1,28 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import CommentThread from './CommentThread';
 import { InstagramComment } from '@/types/instagram';
-import LoadMoreComments from '@/app/components/LoadMoreComments';
-import { generateAIResponse } from '@/app/lib/ai';
 import { Button } from '@/app/components/ui/button';
 import SuccessModal from './SuccessModal';
 import ConfirmationDialog from './ConfirmationDialog';
+import { postAIResponse } from '@/app/lib/ai';
 
 interface CommentSectionProps {
   initialComments: InstagramComment[];
   postId: string;
   postCaption: string;
-  initialNextCursor?: string;
 }
 
 const CommentSection: React.FC<CommentSectionProps> = ({
   initialComments,
   postId,
   postCaption,
-  initialNextCursor,
 }) => {
-  const [comments, setComments] = useState(initialComments);
+  const [comments, setComments] = useState<InstagramComment[]>(initialComments);
   const [aiReplies, setAiReplies] = useState<{ [key: string]: string }>({});
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
   const [isConfirmationOpen, setIsConfirmationOpen] = useState(false);
   const [pendingReply, setPendingReply] = useState<{
@@ -37,33 +35,47 @@ const CommentSection: React.FC<CommentSectionProps> = ({
     setIsGenerating(true);
     const newAiReplies: { [key: string]: string } = { ...aiReplies };
 
-    const generateForComment = async (comment: InstagramComment) => {
-      if (!newAiReplies[comment.id]) {
-        const aiReply = await generateAIResponse(comment.text, postCaption);
-        newAiReplies[comment.id] = aiReply;
-      }
-      if (comment.replies) {
-        for (const reply of comment.replies) {
-          await generateForComment(reply);
-        }
-      }
-    };
-
     for (const comment of comments) {
-      await generateForComment(comment);
+      try {
+        const response = await fetch('/api/generate-ai-response', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ message: comment.text, caption: postCaption }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to generate AI response');
+        }
+
+        const data = await response.json();
+        newAiReplies[comment.id] = data.reply;
+      } catch (error) {
+        console.error('Error generating AI reply:', error);
+      }
     }
 
     setAiReplies(newAiReplies);
     setIsGenerating(false);
   };
 
-  const handlePostAIReply = useCallback(
-    async (commentId: string, parentId: string | null, editedReply: string) => {
-      setPendingReply({ commentId, parentId, editedReply });
-      setIsConfirmationOpen(true);
-    },
-    []
-  );
+  const handleRefreshComments = async () => {
+    setIsRefreshing(true);
+    // Implement the logic to fetch fresh comments
+    // For now, we'll just clear AI replies
+    setAiReplies({});
+    setIsRefreshing(false);
+  };
+
+  const handlePostAIReply = async (
+    commentId: string,
+    parentId: string | null,
+    editedReply: string
+  ) => {
+    setPendingReply({ commentId, parentId, editedReply });
+    setIsConfirmationOpen(true);
+  };
 
   const confirmPostReply = async () => {
     setIsConfirmationOpen(false);
@@ -72,25 +84,8 @@ const CommentSection: React.FC<CommentSectionProps> = ({
     const { commentId, parentId, editedReply } = pendingReply;
 
     try {
-      const response = await fetch('/api/post-reply', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          postId,
-          commentId,
-          parentId,
-          replyText: editedReply,
-        }),
-      });
+      await postAIResponse(commentId, editedReply);
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to post reply');
-      }
-
-      // Update local state to reflect the posted reply
       setComments((prevComments) => {
         const updateComment = (comment: InstagramComment): InstagramComment => {
           if (comment.id === (parentId || commentId)) {
@@ -99,9 +94,9 @@ const CommentSection: React.FC<CommentSectionProps> = ({
               replies: [
                 ...(comment.replies || []),
                 {
-                  id: Date.now().toString(), // Temporary ID
+                  id: Date.now().toString(),
                   text: editedReply,
-                  username: 'Your Instagram Username', // Replace with actual username
+                  username: 'AI Assistant',
                   timestamp: new Date().toISOString(),
                 },
               ],
@@ -119,7 +114,6 @@ const CommentSection: React.FC<CommentSectionProps> = ({
         return prevComments.map(updateComment);
       });
 
-      // Remove the posted reply from aiReplies
       setAiReplies((prev) => {
         const newAiReplies = { ...prev };
         delete newAiReplies[commentId];
@@ -129,11 +123,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
       setIsSuccessModalOpen(true);
     } catch (error) {
       console.error('Failed to post AI response:', error);
-      if (error instanceof Error) {
-        alert(`Error: ${error.message}`);
-      } else {
-        alert('An unexpected error occurred');
-      }
+      alert('Failed to post reply. Please try again.');
     }
 
     setPendingReply(null);
@@ -144,54 +134,50 @@ const CommentSection: React.FC<CommentSectionProps> = ({
     setPendingReply(null);
   };
 
-  const closeSuccessModal = () => {
-    setIsSuccessModalOpen(false);
-  };
+  const topLevelComments = comments.filter(
+    (comment) =>
+      !comments.some((c) => c.replies?.some((reply) => reply.id === comment.id))
+  );
 
-  // Filter out nested comments and sort top-level comments
-  const topLevelComments = comments
-    .filter(
-      (comment) =>
-        !comments.some((c) =>
-          c.replies?.some((reply) => reply.id === comment.id)
-        )
-    )
-    .sort(
-      (a, b) =>
-        new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-    );
+  const sortedTopLevelComments = [...topLevelComments].sort(
+    (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+  );
 
   return (
     <div className='space-y-6'>
-      <Button
-        onClick={handleGenerateAllAIReplies}
-        disabled={isGenerating}
-        className='w-full'
-        variant={isGenerating ? 'outline' : 'default'}
-      >
-        {isGenerating ? 'Generating...' : 'Generate AI Replies'}
-      </Button>
+      <div className='flex space-x-4'>
+        <Button
+          onClick={handleGenerateAllAIReplies}
+          disabled={isGenerating}
+          className='flex-1'
+        >
+          {isGenerating ? 'Generating...' : 'Generate AI Replies'}
+        </Button>
+        <Button
+          onClick={handleRefreshComments}
+          disabled={isRefreshing}
+          className='flex-1'
+          variant='outline'
+        >
+          {isRefreshing ? 'Refreshing...' : 'Refresh Comments'}
+        </Button>
+      </div>
       <div className='space-y-6'>
-        {topLevelComments.map((comment) => (
+        {sortedTopLevelComments.map((comment) => (
           <CommentThread
             key={comment.id}
             comment={comment}
             postId={postId}
             postCaption={postCaption}
-            aiReplies={aiReplies}
+            aiReply={aiReplies[comment.id] || ''}
             onPostAIReply={handlePostAIReply}
           />
         ))}
       </div>
-      {initialNextCursor && (
-        <LoadMoreComments
-          postId={postId}
-          postCaption={postCaption}
-          initialNextCursor={initialNextCursor}
-          onPostAIReply={handlePostAIReply}
-        />
-      )}
-      <SuccessModal isOpen={isSuccessModalOpen} onClose={closeSuccessModal} />
+      <SuccessModal
+        isOpen={isSuccessModalOpen}
+        onClose={() => setIsSuccessModalOpen(false)}
+      />
       <ConfirmationDialog
         isOpen={isConfirmationOpen}
         onConfirm={confirmPostReply}
@@ -201,4 +187,4 @@ const CommentSection: React.FC<CommentSectionProps> = ({
   );
 };
 
-export default React.memo(CommentSection);
+export default CommentSection;

@@ -28,7 +28,6 @@ const LoadMoreComments: React.FC<LoadMoreCommentsProps> = ({
     initialNextCursor
   );
   const [isLoading, setIsLoading] = useState(false);
-  const [aiReplies, setAiReplies] = useState<{ [key: string]: string }>({});
 
   const loadMoreComments = async () => {
     if (isLoading || !nextCursor) return;
@@ -55,7 +54,7 @@ const LoadMoreComments: React.FC<LoadMoreCommentsProps> = ({
           comment={comment}
           postId={postId}
           postCaption={postCaption}
-          aiReplies={aiReplies}
+          aiReply=''
           onPostAIReply={onPostAIReply}
         />
       ))}

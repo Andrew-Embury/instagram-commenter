@@ -10,28 +10,27 @@ interface AIReplyBoxProps {
 }
 
 const AIReplyBox: React.FC<AIReplyBoxProps> = ({ aiReply, onPostReply }) => {
-  const [editedReply, setEditedReply] = useState(aiReply);
+  const [editedReply, setEditedReply] = useState('');
 
   useEffect(() => {
     setEditedReply(aiReply);
   }, [aiReply]);
-
-  const handlePostClick = () => {
-    onPostReply(editedReply);
-  };
 
   return (
     <div className='space-y-2'>
       <Textarea
         value={editedReply}
         onChange={(e) => setEditedReply(e.target.value)}
+        placeholder='AI reply will appear here'
         rows={4}
-        placeholder='No reply generated yet'
         className='w-full p-2 border rounded'
-        readOnly={!aiReply}
       />
       {aiReply && (
-        <Button onClick={handlePostClick} className='w-full' variant='default'>
+        <Button
+          onClick={() => onPostReply(editedReply)}
+          className='w-full'
+          variant='default'
+        >
           Post Reply
         </Button>
       )}

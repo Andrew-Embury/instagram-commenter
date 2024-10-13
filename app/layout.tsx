@@ -1,12 +1,11 @@
 import { Inter } from 'next/font/google';
 import './globals.css';
-import DashboardLayout from '@/app/components/DashboardLayout';
 
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata = {
-  title: 'Instagram Dashboard',
-  description: 'Manage your Instagram posts and comments',
+  title: 'Instagram Commenter',
+  description: 'Manage your Instagram comments',
 };
 
 export default function RootLayout({
@@ -16,9 +15,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang='en'>
-      <body className={inter.className}>
-        <DashboardLayout>{children}</DashboardLayout>
-      </body>
+      <body className={inter.className}>{children}</body>
     </html>
   );
 }

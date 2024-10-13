@@ -1,6 +1,6 @@
 'use client';
 
-import React, { memo } from 'react';
+import React from 'react';
 import Comment from './Comment';
 import AIReplyBox from './AIReplyBox';
 import { InstagramComment } from '@/types/instagram';
@@ -10,7 +10,7 @@ interface CommentThreadProps {
   comment: InstagramComment;
   postId: string;
   postCaption: string;
-  aiReplies: { [key: string]: string };
+  aiReply: string;
   onPostAIReply: (
     commentId: string,
     parentId: string | null,
@@ -18,51 +18,52 @@ interface CommentThreadProps {
   ) => Promise<void>;
 }
 
-const CommentThread: React.FC<CommentThreadProps> = memo(
-  ({ comment, postId, postCaption, aiReplies, onPostAIReply }) => {
-    const renderReplies = (replies: InstagramComment[] | undefined) => {
-      if (!replies || replies.length === 0) return null;
+const CommentThread: React.FC<CommentThreadProps> = ({
+  comment,
+  postId,
+  postCaption,
+  aiReply,
+  onPostAIReply,
+}) => {
+  const renderReplies = (replies: InstagramComment[] | undefined) => {
+    if (!replies || replies.length === 0) return null;
 
-      // Sort replies with the newest at the bottom
-      const sortedReplies = [...replies].sort(
-        (a, b) =>
-          new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-      );
-
-      return sortedReplies.map((reply, index) => (
-        <div key={reply.id} className='ml-8 mt-4'>
-          <Comment comment={reply} />
-          {index === sortedReplies.length - 1 && (
-            <AIReplyBox
-              aiReply={aiReplies[reply.id] || ''}
-              onPostReply={(editedReply) =>
-                onPostAIReply(reply.id, comment.id, editedReply)
-              }
-            />
-          )}
-        </div>
-      ));
-    };
-
-    return (
-      <Card className='overflow-hidden'>
-        <CardContent className='p-4 space-y-4'>
-          <Comment comment={comment} />
-          {(!comment.replies || comment.replies.length === 0) && (
-            <AIReplyBox
-              aiReply={aiReplies[comment.id] || ''}
-              onPostReply={(editedReply) =>
-                onPostAIReply(comment.id, null, editedReply)
-              }
-            />
-          )}
-          {renderReplies(comment.replies)}
-        </CardContent>
-      </Card>
+    const sortedReplies = [...replies].sort(
+      (a, b) =>
+        new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
     );
-  }
-);
 
-CommentThread.displayName = 'CommentThread';
+    return sortedReplies.map((reply, index) => (
+      <div key={reply.id} className='ml-8 mt-4'>
+        <Comment comment={reply} />
+        {index === sortedReplies.length - 1 && (
+          <AIReplyBox
+            aiReply={aiReply}
+            onPostReply={(editedReply) =>
+              onPostAIReply(reply.id, comment.id, editedReply)
+            }
+          />
+        )}
+      </div>
+    ));
+  };
+
+  return (
+    <Card className='overflow-hidden'>
+      <CardContent className='p-4 space-y-4'>
+        <Comment comment={comment} />
+        {(!comment.replies || comment.replies.length === 0) && (
+          <AIReplyBox
+            aiReply={aiReply}
+            onPostReply={(editedReply) =>
+              onPostAIReply(comment.id, null, editedReply)
+            }
+          />
+        )}
+        {renderReplies(comment.replies)}
+      </CardContent>
+    </Card>
+  );
+};
 
 export default CommentThread;

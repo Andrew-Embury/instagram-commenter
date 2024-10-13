@@ -1,43 +1,24 @@
 import { NextResponse } from 'next/server';
-import axios from 'axios';
-
-interface WebhookResponse {
-  output: string;
-}
+import { generateAIResponse } from '@/app/lib/ai';
 
 export async function POST(request: Request) {
-  const { message, caption } = await request.json();
-  const webhookUrl = process.env.WEBHOOK_URL;
-  const webhookToken = process.env.WEBHOOK_TOKEN;
-
-  if (!webhookUrl || !webhookToken) {
-    return NextResponse.json(
-      { error: 'Webhook configuration is missing' },
-      { status: 500 }
-    );
-  }
-
   try {
-    const requestBody = {
-      message,
-      caption,
-    };
+    const { message, caption } = await request.json();
 
-    const response = await axios.post<WebhookResponse>(
-      webhookUrl,
-      requestBody,
-      {
-        headers: {
-          'x-webhook-token': webhookToken,
-          'Content-Type': 'application/json',
-        },
-      }
-    );
+    if (!message) {
+      return NextResponse.json(
+        { error: 'Message is required' },
+        { status: 400 }
+      );
+    }
 
-    return NextResponse.json({ reply: response.data.output });
+    const reply = await generateAIResponse(message, caption || 'No Caption');
+
+    return NextResponse.json({ reply });
   } catch (error) {
+    console.error('Error generating AI reply:', error);
     return NextResponse.json(
-      { error: 'Failed to generate AI response' },
+      { error: 'Failed to generate AI reply' },
       { status: 500 }
     );
   }

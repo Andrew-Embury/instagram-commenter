@@ -70,38 +70,46 @@ export async function fetchInstagramComments(
     throw new Error('Instagram access token is not set');
   }
 
-  let url = `${INSTAGRAM_API_BASE_URL}/${postId}/comments?fields=id,text,username,timestamp,replies{id,text,username,timestamp}&limit=25&access_token=${ACCESS_TOKEN}`;
+  let allComments: InstagramComment[] = [];
+  let nextCursor = after;
 
-  if (after) {
-    url += `&after=${after}`;
-  }
+  do {
+    let url = `${INSTAGRAM_API_BASE_URL}/${postId}/comments?fields=id,text,username,timestamp,replies{id,text,username,timestamp}&limit=50&access_token=${ACCESS_TOKEN}`;
 
-  const response = await fetch(url);
+    if (nextCursor) {
+      url += `&after=${nextCursor}`;
+    }
 
-  if (!response.ok) {
-    throw new Error('Failed to fetch Instagram comments');
-  }
+    const response = await fetch(url);
 
-  const data = await response.json();
+    if (!response.ok) {
+      throw new Error('Failed to fetch Instagram comments');
+    }
 
-  const comments: InstagramComment[] = data.data.map((comment: any) => ({
-    id: comment.id,
-    text: comment.text,
-    username: comment.username,
-    timestamp: comment.timestamp,
-    replies: comment.replies
-      ? comment.replies.data.map((reply: any) => ({
-          id: reply.id,
-          text: reply.text,
-          username: reply.username,
-          timestamp: reply.timestamp,
-        }))
-      : [],
-  }));
+    const data = await response.json();
+
+    const comments: InstagramComment[] = data.data.map((comment: any) => ({
+      id: comment.id,
+      text: comment.text,
+      username: comment.username,
+      timestamp: new Date(comment.timestamp).toISOString(),
+      replies: comment.replies
+        ? comment.replies.data.map((reply: any) => ({
+            id: reply.id,
+            text: reply.text,
+            username: reply.username,
+            timestamp: new Date(reply.timestamp).toISOString(),
+          }))
+        : [],
+    }));
+
+    allComments = [...allComments, ...comments];
+    nextCursor = data.paging?.cursors?.after;
+  } while (nextCursor);
 
   return {
-    comments,
-    next: data.paging?.cursors?.after,
+    comments: allComments,
+    next: nextCursor,
   };
 }
 
