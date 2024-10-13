@@ -1,35 +1,29 @@
 import React from 'react';
-import {
-  fetchInstagramPost,
-  fetchInstagramComments,
-} from '@/app/lib/instagram';
-import { Post } from '@/types/instagram';
 import Image from 'next/image';
 import { Card, CardContent } from '@/app/components/ui/card';
 import { Heart } from 'lucide-react';
 import CommentSection from '@/app/components/CommentSection';
+import { Post } from '@/types/instagram';
+import { fetchInstagramComments } from '@/app/lib/instagram';
+
+export const dynamic = 'force-dynamic';
+
+async function getPost(postId: string): Promise<Post> {
+  const res = await fetch(
+    `${process.env.NEXT_PUBLIC_BASE_URL}/api/instagram-posts/${postId}`,
+    { cache: 'no-store' }
+  );
+  if (!res.ok) throw new Error('Failed to fetch post');
+  return res.json();
+}
 
 export default async function PostPage({
   params,
 }: {
   params: { postId: string };
 }) {
-  let post: Post;
-  let initialComments;
-
-  try {
-    // Fetch post and comments concurrently
-    const [postData, commentsData] = await Promise.all([
-      fetchInstagramPost(params.postId),
-      fetchInstagramComments(params.postId),
-    ]);
-
-    post = postData;
-    initialComments = commentsData.comments;
-  } catch (error) {
-    console.error('Error fetching post or comments:', error);
-    return <div>Error loading post. Please try again later.</div>;
-  }
+  const post = await getPost(params.postId);
+  const { comments } = await fetchInstagramComments(params.postId);
 
   if (!post || !post.imageUrl) {
     return <div>Post not found or media not available.</div>;
@@ -65,7 +59,7 @@ export default async function PostPage({
 
       <h3 className='text-2xl font-semibold text-gray-800'>Comments</h3>
       <CommentSection
-        initialComments={initialComments}
+        initialComments={comments}
         postId={params.postId}
         postCaption={post.caption}
       />

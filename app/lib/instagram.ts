@@ -3,13 +3,44 @@ import { Post, InstagramComment } from '@/types/instagram';
 const INSTAGRAM_API_BASE_URL = 'https://graph.instagram.com/v20.0';
 const ACCESS_TOKEN = process.env.INSTAGRAM_ACCESS_TOKEN;
 
+interface InstagramApiPost {
+  id: string;
+  caption?: string;
+  media_type: string;
+  media_url: string;
+  thumbnail_url?: string;
+  permalink: string;
+  timestamp: string;
+  like_count?: number;
+}
+
+interface InstagramApiComment {
+  id: string;
+  text: string;
+  username: string;
+  timestamp: string;
+  replies?: {
+    data: InstagramApiComment[];
+  };
+}
+
+interface InstagramApiCommentResponse {
+  data: InstagramApiComment[];
+  paging?: {
+    cursors?: {
+      after?: string;
+    };
+  };
+}
+
 export async function fetchInstagramPosts(): Promise<Post[]> {
   if (!ACCESS_TOKEN) {
     throw new Error('Instagram access token is not set');
   }
 
   const response = await fetch(
-    `${INSTAGRAM_API_BASE_URL}/me/media?fields=id,caption,media_type,media_url,permalink,timestamp,like_count&access_token=${ACCESS_TOKEN}`
+    `${INSTAGRAM_API_BASE_URL}/me/media?fields=id,caption,media_type,media_url,permalink,timestamp,like_count&access_token=${ACCESS_TOKEN}`,
+    { cache: 'no-store' }
   );
 
   if (!response.ok) {
@@ -48,7 +79,8 @@ export async function fetchInstagramPost(postId: string): Promise<Post> {
   ].join(',');
 
   const response = await fetch(
-    `${INSTAGRAM_API_BASE_URL}/${postId}?fields=${fields}&access_token=${ACCESS_TOKEN}`
+    `${INSTAGRAM_API_BASE_URL}/${postId}?fields=${fields}&access_token=${ACCESS_TOKEN}`,
+    { cache: 'no-store' }
   );
 
   if (!response.ok) {
@@ -160,17 +192,6 @@ export async function postReplyToInstagram(
 }
 
 // New type definitions
-interface InstagramApiPost {
-  id: string;
-  caption?: string;
-  media_type: string;
-  media_url: string;
-  thumbnail_url?: string;
-  permalink: string;
-  timestamp: string;
-  like_count?: number;
-}
-
 interface InstagramApiComment {
   id: string;
   text: string;

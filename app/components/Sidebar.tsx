@@ -9,16 +9,10 @@ const Sidebar = () => {
           <div className='flex-1 flex flex-col pt-5 pb-4 overflow-y-auto'>
             <nav className='mt-5 flex-1 px-2 bg-gray-800 space-y-1'>
               <Link
-                href='/dashboard'
-                className='text-gray-300 hover:bg-gray-700 hover:text-white group flex items-center px-2 py-2 text-sm font-medium rounded-md'
-              >
-                Dashboard
-              </Link>
-              <Link
                 href='/dashboard/posts'
                 className='text-gray-300 hover:bg-gray-700 hover:text-white group flex items-center px-2 py-2 text-sm font-medium rounded-md'
               >
-                Posts
+                All Posts
               </Link>
               {/* Add more navigation items as needed */}
             </nav>

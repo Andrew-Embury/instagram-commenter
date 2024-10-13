@@ -1,41 +1,42 @@
 import React from 'react';
-import { fetchInstagramPosts } from '@/app/lib/instagram';
-import { Post } from '@/types/instagram';
-import Image from 'next/image';
-import { Card, CardContent } from '@/app/components/ui/card';
-import { Heart } from 'lucide-react';
 import Link from 'next/link';
+import { Card, CardContent } from '@/app/components/ui/card';
+import Image from 'next/image';
+import { Post } from '@/types/instagram';
+
+export const dynamic = 'force-dynamic';
+
+async function getPosts(): Promise<Post[]> {
+  const res = await fetch(
+    `${process.env.NEXT_PUBLIC_BASE_URL}/api/instagram-posts`,
+    { cache: 'no-store' }
+  );
+  if (!res.ok) throw new Error('Failed to fetch posts');
+  return res.json();
+}
 
 export default async function PostsPage() {
-  const posts: Post[] = await fetchInstagramPosts();
+  const posts = await getPosts();
 
   return (
-    <div className='grid gap-6 md:grid-cols-2 lg:grid-cols-3'>
+    <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
       {posts.map((post) => (
-        <div key={post.id} className='space-y-2'>
-          <Link href={`/dashboard/posts/${post.id}`}>
-            <Card className='overflow-hidden'>
-              <CardContent className='p-0'>
-                <div className='relative aspect-square'>
-                  <Image
-                    src={post.imageUrl}
-                    alt={post.caption}
-                    fill
-                    sizes='(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw'
-                    style={{ objectFit: 'cover' }}
-                  />
-                </div>
-                <div className='flex justify-end items-center p-2'>
-                  <div className='flex items-center'>
-                    <Heart className='w-4 h-4 mr-1' />
-                    {post.likes}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </Link>
-          <p className='text-sm text-gray-600'>{post.caption}</p>
-        </div>
+        <Link href={`/dashboard/posts/${post.id}`} key={post.id}>
+          <Card>
+            <CardContent className='p-4'>
+              <div className='relative aspect-square w-full mb-2'>
+                <Image
+                  src={post.imageUrl}
+                  alt={post.caption}
+                  fill
+                  sizes='(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw'
+                  style={{ objectFit: 'cover' }}
+                />
+              </div>
+              <p className='text-sm truncate'>{post.caption}</p>
+            </CardContent>
+          </Card>
+        </Link>
       ))}
     </div>
   );
