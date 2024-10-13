@@ -17,6 +17,7 @@ export async function fetchInstagramPosts(): Promise<Post[]> {
   }
 
   const data = await response.json();
+  console.log('Instagram posts:', data);
 
   return data.data.map((post: any) => ({
     id: post.id,
@@ -45,7 +46,7 @@ export async function fetchInstagramPost(postId: string): Promise<Post> {
   return {
     id: post.id,
     imageUrl: post.media_type === 'VIDEO' ? post.thumbnail_url : post.media_url,
-    caption: post.caption || '',
+    caption: post.caption || 'There is no caption for this post',
     likes: post.like_count || 0,
   };
 }

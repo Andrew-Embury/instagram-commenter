@@ -5,10 +5,6 @@ import CommentThread from './CommentThread';
 import { InstagramComment } from '@/types/instagram';
 import LoadMoreComments from '@/app/components/LoadMoreComments';
 import { postAIResponse } from '@/app/lib/ai';
-import {
-  fetchInstagramPost,
-  fetchInstagramComments,
-} from '@/app/lib/instagram';
 
 interface CommentSectionProps {
   initialComments: InstagramComment[];
