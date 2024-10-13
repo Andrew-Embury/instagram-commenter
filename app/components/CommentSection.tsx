@@ -4,9 +4,8 @@ import React, { useState, useCallback } from 'react';
 import CommentThread from './CommentThread';
 import { InstagramComment } from '@/types/instagram';
 import LoadMoreComments from '@/app/components/LoadMoreComments';
-import { generateAIResponse, postAIResponse } from '@/app/lib/ai';
+import { generateAIResponse } from '@/app/lib/ai';
 import { Button } from '@/app/components/ui/button';
-import { postReplyToInstagram } from '@/app/lib/instagram'; // You'll need to implement this function
 import SuccessModal from './SuccessModal';
 
 interface CommentSectionProps {
@@ -31,55 +30,40 @@ const CommentSection: React.FC<CommentSectionProps> = ({
     setIsGenerating(true);
     const newAiReplies: { [key: string]: string } = { ...aiReplies };
 
-    const generateRepliesForComment = async (comment: InstagramComment) => {
-      if (
-        !newAiReplies[comment.id] &&
-        (!comment.replies || comment.replies.length === 0)
-      ) {
-        console.log(`Generating reply for comment: ${comment.id}`);
+    const generateForComment = async (comment: InstagramComment) => {
+      if (!newAiReplies[comment.id]) {
         const aiReply = await generateAIResponse(comment.text, postCaption);
         newAiReplies[comment.id] = aiReply;
-        console.log(`Generated reply for comment: ${comment.id}`);
-      } else {
-        console.log(
-          `Skipping generation for comment: ${comment.id} (already exists or has replies)`
-        );
       }
-
-      if (comment.replies && comment.replies.length > 0) {
-        const lastReply = comment.replies[comment.replies.length - 1];
-        if (!newAiReplies[lastReply.id]) {
-          console.log(`Generating reply for nested comment: ${lastReply.id}`);
-          const aiReply = await generateAIResponse(lastReply.text, postCaption);
-          newAiReplies[lastReply.id] = aiReply;
-          console.log(`Generated reply for nested comment: ${lastReply.id}`);
-        } else {
-          console.log(
-            `Skipping generation for nested comment: ${lastReply.id} (already exists)`
-          );
+      if (comment.replies) {
+        for (const reply of comment.replies) {
+          await generateForComment(reply);
         }
       }
     };
 
-    console.log('Starting to generate all AI replies');
     for (const comment of comments) {
-      await generateRepliesForComment(comment);
+      await generateForComment(comment);
     }
-    console.log('Finished generating all AI replies');
 
     setAiReplies(newAiReplies);
     setIsGenerating(false);
   };
 
   const handlePostAIReply = useCallback(
-    async (commentId: string, editedReply: string) => {
+    async (commentId: string, parentId: string | null, editedReply: string) => {
       try {
         const response = await fetch('/api/post-reply', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ postId, commentId, replyText: editedReply }),
+          body: JSON.stringify({
+            postId,
+            commentId,
+            parentId,
+            replyText: editedReply,
+          }),
         });
 
         if (!response.ok) {
@@ -88,26 +72,45 @@ const CommentSection: React.FC<CommentSectionProps> = ({
         }
 
         // Update local state to reflect the posted reply
-        setComments((prevComments) =>
-          prevComments.map((comment) =>
-            comment.id === commentId
-              ? {
-                  ...comment,
-                  replies: [
-                    ...(comment.replies || []),
-                    {
-                      id: Date.now().toString(), // Temporary ID
-                      text: editedReply,
-                      username: 'Your Instagram Username', // Replace with actual username
-                      timestamp: new Date().toISOString(),
-                    },
-                  ],
-                }
-              : comment
-          )
-        );
+        setComments((prevComments) => {
+          const updateComment = (
+            comment: InstagramComment
+          ): InstagramComment => {
+            if (comment.id === (parentId || commentId)) {
+              return {
+                ...comment,
+                replies: [
+                  ...(comment.replies || []),
+                  {
+                    id: Date.now().toString(), // Temporary ID
+                    text: editedReply,
+                    username: 'Your Instagram Username', // Replace with actual username
+                    timestamp: new Date().toISOString(),
+                  },
+                ],
+              };
+            }
+            if (comment.replies) {
+              return {
+                ...comment,
+                replies: comment.replies.map(updateComment),
+              };
+            }
+            return comment;
+          };
+
+          return prevComments.map(updateComment);
+        });
+
+        // Remove the posted reply from aiReplies
+        setAiReplies((prev) => {
+          const newAiReplies = { ...prev };
+          delete newAiReplies[commentId];
+          return newAiReplies;
+        });
+
         setIsSuccessModalOpen(true);
-      } catch (error: unknown) {
+      } catch (error) {
         console.error('Failed to post AI response:', error);
         if (error instanceof Error) {
           alert(`Error: ${error.message}`);
@@ -119,14 +122,22 @@ const CommentSection: React.FC<CommentSectionProps> = ({
     [postId]
   );
 
-  const topLevelComments = comments.filter(
-    (comment) =>
-      !comments.some((c) => c.replies?.some((reply) => reply.id === comment.id))
-  );
+  const closeSuccessModal = () => {
+    setIsSuccessModalOpen(false);
+  };
 
-  const sortedTopLevelComments = topLevelComments.sort(
-    (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-  );
+  // Filter out nested comments and sort top-level comments
+  const topLevelComments = comments
+    .filter(
+      (comment) =>
+        !comments.some((c) =>
+          c.replies?.some((reply) => reply.id === comment.id)
+        )
+    )
+    .sort(
+      (a, b) =>
+        new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+    );
 
   return (
     <div className='space-y-6'>
@@ -139,7 +150,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
         {isGenerating ? 'Generating...' : 'Generate AI Replies'}
       </Button>
       <div className='space-y-6'>
-        {sortedTopLevelComments.map((comment) => (
+        {topLevelComments.map((comment) => (
           <CommentThread
             key={comment.id}
             comment={comment}
@@ -158,10 +169,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
           onPostAIReply={handlePostAIReply}
         />
       )}
-      <SuccessModal
-        isOpen={isSuccessModalOpen}
-        onClose={() => setIsSuccessModalOpen(false)}
-      />
+      <SuccessModal isOpen={isSuccessModalOpen} onClose={closeSuccessModal} />
     </div>
   );
 };

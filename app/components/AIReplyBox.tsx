@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/app/components/ui/button';
 import { Textarea } from '@/app/components/ui/textarea';
-import ConfirmationModal from './ConfirmationModal';
 
 interface AIReplyBoxProps {
   aiReply: string;
@@ -11,26 +10,14 @@ interface AIReplyBoxProps {
 }
 
 const AIReplyBox: React.FC<AIReplyBoxProps> = ({ aiReply, onPostReply }) => {
-  const [editedReply, setEditedReply] = useState(
-    aiReply || 'No reply generated yet'
-  );
-  const [isConfirmationOpen, setIsConfirmationOpen] = useState(false);
+  const [editedReply, setEditedReply] = useState(aiReply);
 
   useEffect(() => {
-    setEditedReply(aiReply || 'No reply generated yet');
+    setEditedReply(aiReply);
   }, [aiReply]);
 
   const handlePostClick = () => {
-    setIsConfirmationOpen(true);
-  };
-
-  const handleConfirm = () => {
     onPostReply(editedReply);
-    setIsConfirmationOpen(false);
-  };
-
-  const handleCancel = () => {
-    setIsConfirmationOpen(false);
   };
 
   return (
@@ -48,11 +35,6 @@ const AIReplyBox: React.FC<AIReplyBoxProps> = ({ aiReply, onPostReply }) => {
           Post Reply
         </Button>
       )}
-      <ConfirmationModal
-        isOpen={isConfirmationOpen}
-        onConfirm={handleConfirm}
-        onCancel={handleCancel}
-      />
     </div>
   );
 };
