@@ -63,10 +63,19 @@ const CommentSection: React.FC<CommentSectionProps> = ({
 
   const handleRefreshComments = async () => {
     setIsRefreshing(true);
-    // Implement the logic to fetch fresh comments
-    // For now, we'll just clear AI replies
-    setAiReplies({});
-    setIsRefreshing(false);
+    try {
+      const response = await fetch(`/api/refresh-comments?postId=${postId}`);
+      if (!response.ok) {
+        throw new Error('Failed to refresh comments');
+      }
+      const refreshedComments = await response.json();
+      setComments(refreshedComments);
+    } catch (error) {
+      console.error('Error refreshing comments:', error);
+      alert('Failed to refresh comments. Please try again.');
+    } finally {
+      setIsRefreshing(false);
+    }
   };
 
   const handlePostAIReply = async (
