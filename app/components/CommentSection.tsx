@@ -19,16 +19,9 @@ const CommentSection: React.FC<CommentSectionProps> = ({
   postCaption,
   initialNextCursor,
 }) => {
-  console.log('CommentSection props:', {
-    postId,
-    postCaption,
-    initialNextCursor,
-  });
-
   const handlePostAIReply = async (commentId: string, editedReply: string) => {
     try {
       await postAIResponse(commentId, editedReply);
-      console.log('AI reply posted successfully');
       // You might want to update the comments state here
     } catch (error) {
       console.error('Failed to post AI response:', error);

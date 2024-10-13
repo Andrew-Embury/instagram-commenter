@@ -18,8 +18,6 @@ const CommentThread: React.FC<CommentThreadProps> = ({
   postCaption,
   onPostAIReply,
 }) => {
-  console.log('CommentThread received postCaption:', postCaption); // Add this line
-
   const getCommentText = (comment: InstagramComment): string => {
     let text = comment.text;
     if (comment.replies && comment.replies.length > 0) {
@@ -31,7 +29,6 @@ const CommentThread: React.FC<CommentThreadProps> = ({
   const renderReplies = (replies: InstagramComment[] | undefined) => {
     if (!replies || replies.length === 0) return null;
 
-    // Sort replies by timestamp, oldest first
     const sortedReplies = [...replies].sort(
       (a, b) =>
         new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()

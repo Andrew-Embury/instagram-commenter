@@ -13,4 +13,6 @@ export interface Post {
   caption: string;
   likes: number;
   mediaType: string;
+  permalink: string;
+  timestamp: string;
 }

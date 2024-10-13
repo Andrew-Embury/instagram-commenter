@@ -41,7 +41,7 @@ export async function generateAIResponse(
   commentText: string,
   postCaption: string
 ) {
-  console.log('generateAIResponse received postCaption:', postCaption); // Add this line
+  // console.log('generateAIResponse received postCaption:', postCaption); // Add this line
 
   const response = await fetch('/api/generate-ai-response', {
     method: 'POST',

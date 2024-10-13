@@ -17,7 +17,6 @@ export async function fetchInstagramPosts(): Promise<Post[]> {
   }
 
   const data = await response.json();
-  console.log('Instagram posts:', data);
 
   return data.data.map((post: any) => ({
     id: post.id,
@@ -51,7 +50,6 @@ export async function fetchInstagramPost(postId: string): Promise<Post> {
   }
 
   const post = await response.json();
-  console.log('Instagram post:', post);
 
   return {
     id: post.id,

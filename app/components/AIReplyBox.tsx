@@ -18,8 +18,6 @@ const AIReplyBox: React.FC<AIReplyBoxProps> = ({
   postCaption,
   parentCommentId,
 }) => {
-  console.log('AIReplyBox received postCaption:', postCaption); // Add this line
-
   const [aiReply, setAiReply] = useState(initialReply);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -30,10 +28,8 @@ const AIReplyBox: React.FC<AIReplyBoxProps> = ({
       setError(null);
       try {
         const reply = await generateAIResponse(commentText, postCaption);
-        console.log('AI Reply received:', reply);
         setAiReply(reply);
       } catch (err) {
-        console.error('Error fetching AI reply:', err);
         setError('Failed to generate AI reply');
       } finally {
         setIsLoading(false);
@@ -48,7 +44,6 @@ const AIReplyBox: React.FC<AIReplyBoxProps> = ({
       await postAIResponse(parentCommentId || '', aiReply);
       onPost(aiReply);
     } catch (err) {
-      console.error('Error posting AI reply:', err);
       setError('Failed to post AI reply');
     }
   };
