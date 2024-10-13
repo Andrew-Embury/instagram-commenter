@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { generateAIResponse, postAIResponse } from '@/lib/ai';
+import { generateAIResponse, postAIResponse } from '@/app/lib/ai';
 
 interface AIReplyBoxProps {
   initialReply: string;
@@ -18,6 +18,8 @@ const AIReplyBox: React.FC<AIReplyBoxProps> = ({
   postCaption,
   parentCommentId,
 }) => {
+  console.log('AIReplyBox received postCaption:', postCaption); // Add this line
+
   const [aiReply, setAiReply] = useState(initialReply);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

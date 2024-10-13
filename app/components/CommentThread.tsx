@@ -18,6 +18,8 @@ const CommentThread: React.FC<CommentThreadProps> = ({
   postCaption,
   onPostAIReply,
 }) => {
+  console.log('CommentThread received postCaption:', postCaption); // Add this line
+
   const getCommentText = (comment: InstagramComment): string => {
     let text = comment.text;
     if (comment.replies && comment.replies.length > 0) {

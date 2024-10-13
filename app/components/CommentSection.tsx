@@ -1,56 +1,49 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import CommentThread from './CommentThread';
 import { InstagramComment } from '@/types/instagram';
-import { fetchInstagramComments } from '@/lib/instagram';
-import { generateAIResponse, postAIResponse } from '@/lib/ai';
+import LoadMoreComments from '@/app/components/LoadMoreComments';
+import { postAIResponse } from '@/app/lib/ai';
+import {
+  fetchInstagramPost,
+  fetchInstagramComments,
+} from '@/app/lib/instagram';
 
 interface CommentSectionProps {
   initialComments: InstagramComment[];
   postId: string;
   postCaption: string;
+  initialNextCursor?: string;
 }
 
 const CommentSection: React.FC<CommentSectionProps> = ({
   initialComments,
   postId,
   postCaption,
+  initialNextCursor,
 }) => {
-  const [comments, setComments] = useState<InstagramComment[]>(initialComments);
-  const [nextCursor, setNextCursor] = useState<string | undefined>(undefined);
-  const [isLoading, setIsLoading] = useState(false);
-
-  const loadMoreComments = async () => {
-    if (isLoading || !nextCursor) return;
-
-    setIsLoading(true);
-    try {
-      const { comments: newComments, next } = await fetchInstagramComments(
-        postId,
-        nextCursor
-      );
-      setComments((prevComments) => [...prevComments, ...newComments]);
-      setNextCursor(next);
-    } catch (error) {
-      console.error('Error fetching more comments:', error);
-    }
-    setIsLoading(false);
-  };
+  console.log('CommentSection props:', {
+    postId,
+    postCaption,
+    initialNextCursor,
+  });
 
   const handlePostAIReply = async (commentId: string, editedReply: string) => {
     try {
       await postAIResponse(commentId, editedReply);
       console.log('AI reply posted successfully');
-      // You might want to refresh the comments here or update the local state
+      // You might want to update the comments state here
     } catch (error) {
       console.error('Failed to post AI response:', error);
     }
   };
 
-  const topLevelComments = comments.filter(
+  const topLevelComments = initialComments.filter(
     (comment) =>
-      !comments.some((c) => c.replies?.some((reply) => reply.id === comment.id))
+      !initialComments.some((c) =>
+        c.replies?.some((reply) => reply.id === comment.id)
+      )
   );
 
   const sortedTopLevelComments = topLevelComments.sort(
@@ -68,14 +61,13 @@ const CommentSection: React.FC<CommentSectionProps> = ({
           onPostAIReply={handlePostAIReply}
         />
       ))}
-      {nextCursor && (
-        <button
-          onClick={loadMoreComments}
-          disabled={isLoading}
-          className='mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-blue-300'
-        >
-          {isLoading ? 'Loading...' : 'Load More Comments'}
-        </button>
+      {initialNextCursor && (
+        <LoadMoreComments
+          postId={postId}
+          postCaption={postCaption}
+          initialNextCursor={initialNextCursor}
+          onPostAIReply={handlePostAIReply}
+        />
       )}
     </div>
   );

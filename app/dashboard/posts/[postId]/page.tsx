@@ -1,8 +1,11 @@
 import React from 'react';
-import { fetchInstagramPost, fetchInstagramComments } from '@/lib/instagram';
+import {
+  fetchInstagramPost,
+  fetchInstagramComments,
+} from '@/app/lib/instagram';
 import { Post } from '@/types/instagram';
 import Image from 'next/image';
-import { Card, CardContent, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardFooter } from '@/app/components/ui/card';
 import { Heart } from 'lucide-react';
 import dynamic from 'next/dynamic';
 
@@ -63,6 +66,7 @@ export default async function PostPage({
       <CommentSection
         initialComments={initialComments}
         postId={params.postId}
+        postCaption={post.caption}
       />
     </div>
   );

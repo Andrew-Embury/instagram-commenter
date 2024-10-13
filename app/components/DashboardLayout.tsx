@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import { Menu, Image as ImageIcon } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Button } from '@/app/components/ui/button';
+import { Sheet, SheetContent, SheetTrigger } from '@/app/components/ui/sheet';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { ReactNode } from 'react';

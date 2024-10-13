@@ -1,6 +1,6 @@
 'use client';
 
-import { Card, CardContent, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardFooter } from '@/app/components/ui/card';
 import Image from 'next/image';
 import { MessageSquare, Heart } from 'lucide-react';
 import { Post } from '@/types/instagram';
@@ -32,9 +32,6 @@ export default function PostCard({ post }: { post: Post }) {
           <div className='flex space-x-4'>
             <span className='flex items-center'>
               <Heart className='w-4 h-4 mr-1' /> {post.likes}
-            </span>
-            <span className='flex items-center'>
-              <MessageSquare className='w-4 h-4 mr-1' /> {post.comments}
             </span>
           </div>
         </CardFooter>

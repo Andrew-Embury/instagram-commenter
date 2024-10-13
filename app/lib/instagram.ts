@@ -1,64 +1,94 @@
 import { Post, InstagramComment } from '@/types/instagram';
 
-const INSTAGRAM_API_URL = 'https://graph.instagram.com/v12.0';
+const INSTAGRAM_API_BASE_URL = 'https://graph.instagram.com/v20.0';
+const ACCESS_TOKEN = process.env.INSTAGRAM_ACCESS_TOKEN;
+
+export async function fetchInstagramPosts(): Promise<Post[]> {
+  if (!ACCESS_TOKEN) {
+    throw new Error('Instagram access token is not set');
+  }
+
+  const response = await fetch(
+    `${INSTAGRAM_API_BASE_URL}/me/media?fields=id,caption,media_type,media_url,thumbnail_url,permalink,timestamp,like_count&access_token=${ACCESS_TOKEN}`
+  );
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch Instagram posts');
+  }
+
+  const data = await response.json();
+
+  return data.data.map((post: any) => ({
+    id: post.id,
+    imageUrl: post.media_type === 'VIDEO' ? post.thumbnail_url : post.media_url,
+    caption: post.caption || '',
+    likes: post.like_count || 0,
+  }));
+}
 
 export async function fetchInstagramPost(postId: string): Promise<Post> {
-  const url = `${INSTAGRAM_API_URL}/${postId}?fields=id,media_url,caption,like_count,comments_count&access_token=${process.env.INSTAGRAM_ACCESS_TOKEN}`;
+  if (!ACCESS_TOKEN) {
+    throw new Error('Instagram access token is not set');
+  }
+
+  const response = await fetch(
+    `${INSTAGRAM_API_BASE_URL}/${postId}?fields=id,caption,media_type,media_url,thumbnail_url,permalink,timestamp,like_count&access_token=${ACCESS_TOKEN}`
+  );
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch Instagram post');
+  }
+
+  const post = await response.json();
+  console.log('Instagram post:', post);
+
+  return {
+    id: post.id,
+    imageUrl: post.media_type === 'VIDEO' ? post.thumbnail_url : post.media_url,
+    caption: post.caption || '',
+    likes: post.like_count || 0,
+  };
+}
+
+export async function fetchInstagramComments(
+  postId: string,
+  after?: string
+): Promise<{ comments: InstagramComment[]; next?: string }> {
+  if (!ACCESS_TOKEN) {
+    throw new Error('Instagram access token is not set');
+  }
+
+  let url = `${INSTAGRAM_API_BASE_URL}/${postId}/comments?fields=id,text,username,timestamp,replies{id,text,username,timestamp}&limit=25&access_token=${ACCESS_TOKEN}`;
+
+  if (after) {
+    url += `&after=${after}`;
+  }
 
   const response = await fetch(url);
 
   if (!response.ok) {
-    throw new Error(`Failed to fetch Instagram post: ${response.status}`);
-  }
-
-  const data = await response.json();
-  console.log('Raw Instagram post data:', data);
-
-  // Fetch comments to calculate total count including replies
-  const comments = await fetchInstagramComments(postId);
-  console.log('Fetched comments:', comments);
-
-  const totalCommentCount = calculateTotalCommentCount(comments);
-  console.log('Total comment count:', totalCommentCount);
-
-  // Transform the API response to match our Post interface
-  const post: Post = {
-    id: data.id,
-    imageUrl: data.media_url,
-    caption: data.caption,
-    likes: data.like_count,
-    //comments: totalCommentCount,
-  };
-
-  console.log('Transformed post object:', post);
-
-  return post;
-}
-
-export async function fetchInstagramComments(
-  postId: string
-): Promise<InstagramComment[]> {
-  const response = await fetch(
-    `${INSTAGRAM_API_URL}/${postId}/comments?fields=id,text,timestamp,username,replies{id,text,timestamp,username}&access_token=${process.env.INSTAGRAM_ACCESS_TOKEN}`
-  );
-  if (!response.ok) {
     throw new Error('Failed to fetch Instagram comments');
   }
-  const data = await response.json();
-  return data.data.map((comment: any) => ({
-    ...comment,
-    replies: comment.replies ? comment.replies.data : [],
-  }));
-}
 
-function calculateTotalCommentCount(comments: InstagramComment[]): number {
-  return comments.reduce((total, comment) => {
-    // Count the comment itself
-    let count = 1;
-    // Add the count of all replies
-    if (comment.replies && Array.isArray(comment.replies)) {
-      count += comment.replies.length;
-    }
-    return total + count;
-  }, 0);
+  const data = await response.json();
+
+  const comments: InstagramComment[] = data.data.map((comment: any) => ({
+    id: comment.id,
+    text: comment.text,
+    username: comment.username,
+    timestamp: comment.timestamp,
+    replies: comment.replies
+      ? comment.replies.data.map((reply: any) => ({
+          id: reply.id,
+          text: reply.text,
+          username: reply.username,
+          timestamp: reply.timestamp,
+        }))
+      : [],
+  }));
+
+  return {
+    comments,
+    next: data.paging?.cursors?.after,
+  };
 }
