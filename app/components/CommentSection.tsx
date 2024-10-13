@@ -6,7 +6,8 @@ import { InstagramComment } from '@/types/instagram';
 import { Button } from '@/app/components/ui/button';
 import SuccessModal from './SuccessModal';
 import ConfirmationDialog from './ConfirmationDialog';
-import { postAIResponse } from '@/app/lib/ai';
+//import { postAIResponse } from '@/app/lib/ai';
+import { postReplyToInstagram } from '@/app/lib/instagram';
 
 interface CommentSectionProps {
   initialComments: InstagramComment[];
@@ -84,7 +85,17 @@ const CommentSection: React.FC<CommentSectionProps> = ({
     const { commentId, parentId, editedReply } = pendingReply;
 
     try {
-      await postAIResponse(commentId, editedReply);
+      const response = await fetch('/api/post-reply', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ postId, commentId, replyText: editedReply }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to post reply');
+      }
 
       setComments((prevComments) => {
         const updateComment = (comment: InstagramComment): InstagramComment => {

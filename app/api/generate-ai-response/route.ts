@@ -12,7 +12,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const reply = await generateAIResponse(message, caption || 'No Caption');
+    const reply = await generateAIResponse(message, caption || '');
 
     return NextResponse.json({ reply });
   } catch (error) {
