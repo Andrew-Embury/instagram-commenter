@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import CommentThread from './CommentThread';
 import { InstagramComment } from '@/types/instagram';
 import LoadMoreComments from '@/app/components/LoadMoreComments';
@@ -26,43 +26,58 @@ const CommentSection: React.FC<CommentSectionProps> = ({
   const handleGenerateAllAIReplies = async () => {
     setIsGenerating(true);
     const newAiReplies: { [key: string]: string } = { ...aiReplies };
-    const batchSize = 20; // Changed from 5 to 20
 
-    for (let i = 0; i < comments.length; i += batchSize) {
-      const batch = comments.slice(i, i + batchSize);
-      const promises = batch.map((comment) =>
-        generateAIResponse(comment.text, postCaption)
-          .then((reply) => {
-            newAiReplies[comment.id] = reply;
-          })
-          .catch((error) => {
-            console.error(
-              `Failed to generate AI reply for comment ${comment.id}:`,
-              error
-            );
-          })
-      );
-
-      await Promise.all(promises);
-      setAiReplies({ ...newAiReplies });
-
-      // Add a delay between batches to avoid rate limiting
-      if (i + batchSize < comments.length) {
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+    const generateRepliesForComment = async (comment: InstagramComment) => {
+      if (
+        !newAiReplies[comment.id] &&
+        (!comment.replies || comment.replies.length === 0)
+      ) {
+        console.log(`Generating reply for comment: ${comment.id}`);
+        const aiReply = await generateAIResponse(comment.text, postCaption);
+        newAiReplies[comment.id] = aiReply;
+        console.log(`Generated reply for comment: ${comment.id}`);
+      } else {
+        console.log(
+          `Skipping generation for comment: ${comment.id} (already exists or has replies)`
+        );
       }
-    }
 
+      if (comment.replies && comment.replies.length > 0) {
+        const lastReply = comment.replies[comment.replies.length - 1];
+        if (!newAiReplies[lastReply.id]) {
+          console.log(`Generating reply for nested comment: ${lastReply.id}`);
+          const aiReply = await generateAIResponse(lastReply.text, postCaption);
+          newAiReplies[lastReply.id] = aiReply;
+          console.log(`Generated reply for nested comment: ${lastReply.id}`);
+        } else {
+          console.log(
+            `Skipping generation for nested comment: ${lastReply.id} (already exists)`
+          );
+        }
+      }
+    };
+
+    console.log('Starting to generate all AI replies');
+    for (const comment of comments) {
+      await generateRepliesForComment(comment);
+    }
+    console.log('Finished generating all AI replies');
+
+    setAiReplies(newAiReplies);
     setIsGenerating(false);
   };
 
-  const handlePostAIReply = async (commentId: string, editedReply: string) => {
-    try {
-      await postAIResponse(commentId, editedReply);
-      // You might want to update the comments state here
-    } catch (error) {
-      console.error('Failed to post AI response:', error);
-    }
-  };
+  const handlePostAIReply = useCallback(
+    async (commentId: string, editedReply: string) => {
+      try {
+        await postAIResponse(commentId, editedReply);
+        // You might want to update the comments state here
+      } catch (error) {
+        console.error('Failed to post AI response:', error);
+      }
+    },
+    []
+  );
 
   const topLevelComments = comments.filter(
     (comment) =>
@@ -88,7 +103,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
           comment={comment}
           postId={postId}
           postCaption={postCaption}
-          aiReply={aiReplies[comment.id] || ''}
+          aiReplies={aiReplies}
           onPostAIReply={handlePostAIReply}
         />
       ))}
@@ -104,4 +119,4 @@ const CommentSection: React.FC<CommentSectionProps> = ({
   );
 };
 
-export default CommentSection;
+export default React.memo(CommentSection);

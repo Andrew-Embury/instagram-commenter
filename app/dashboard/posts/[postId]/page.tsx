@@ -5,7 +5,7 @@ import {
 } from '@/app/lib/instagram';
 import { Post } from '@/types/instagram';
 import Image from 'next/image';
-import { Card, CardContent, CardFooter } from '@/app/components/ui/card';
+import { Card, CardContent } from '@/app/components/ui/card';
 import { Heart } from 'lucide-react';
 import dynamic from 'next/dynamic';
 
@@ -40,27 +40,29 @@ export default async function PostPage({
   return (
     <div className='space-y-6'>
       <h2 className='text-2xl font-bold'>Post Details</h2>
-      <Card>
-        <CardContent className='p-0'>
-          <div className='relative aspect-square w-full'>
-            <Image
-              src={post.imageUrl}
-              alt={post.caption || 'Instagram post'}
-              fill
-              sizes='(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw'
-              style={{ objectFit: 'cover' }}
-              className='rounded-t-lg'
-            />
-          </div>
-        </CardContent>
-        <CardFooter className='flex justify-between items-center p-4'>
-          <p className='text-sm text-gray-500'>{post.caption}</p>
-          <div className='flex items-center'>
-            <Heart className='w-4 h-4 mr-1' />
-            {post.likes}
-          </div>
-        </CardFooter>
-      </Card>
+      <div className='space-y-2'>
+        <Card>
+          <CardContent className='p-0'>
+            <div className='relative aspect-square w-full'>
+              <Image
+                src={post.imageUrl}
+                alt={post.caption || 'Instagram post'}
+                fill
+                sizes='(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw'
+                style={{ objectFit: 'cover' }}
+                className='rounded-t-lg'
+              />
+            </div>
+            <div className='flex justify-end items-center p-4'>
+              <div className='flex items-center'>
+                <Heart className='w-4 h-4 mr-1' />
+                {post.likes}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <p className='text-sm text-gray-600'>{post.caption}</p>
+      </div>
 
       <h2>Comments</h2>
       <CommentSection

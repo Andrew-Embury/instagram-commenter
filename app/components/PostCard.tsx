@@ -1,41 +1,32 @@
 'use client';
 
-import { Card, CardContent, CardFooter } from '@/app/components/ui/card';
-import Image from 'next/image';
-import { MessageSquare, Heart } from 'lucide-react';
-import { Post } from '@/types/instagram';
+import React from 'react';
 import Link from 'next/link';
+import { Post } from '@/types/instagram';
+import { Card, CardContent } from '@/app/components/ui/card';
 
-export default function PostCard({ post }: { post: Post }) {
-  return (
-    <Link href={`/dashboard/posts/${post.id}`}>
-      <Card
-        key={post.id}
-        className='hover:shadow-lg transition-shadow duration-200'
-      >
-        <CardContent className='p-0'>
-          <div className='relative aspect-square w-full'>
-            <Image
-              src={post.imageUrl}
-              alt={post.caption}
-              fill
-              sizes='(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw'
-              style={{ objectFit: 'cover' }}
-              className='rounded-t-lg'
-              onError={(e) => {
-                e.currentTarget.src = '/placeholder.jpg'; // Replace with your placeholder image
-              }}
-            />
-          </div>
-        </CardContent>
-        <CardFooter className='flex justify-between items-center p-4'>
-          <div className='flex space-x-4'>
-            <span className='flex items-center'>
-              <Heart className='w-4 h-4 mr-1' /> {post.likes}
-            </span>
-          </div>
-        </CardFooter>
-      </Card>
-    </Link>
-  );
+interface PostCardProps {
+  post: Post;
 }
+
+const PostCard: React.FC<PostCardProps> = ({ post }) => {
+  return (
+    <div className='space-y-2'>
+      <Link href={`/dashboard/posts/${post.id}`}>
+        <Card className='cursor-pointer hover:shadow-lg transition-shadow'>
+          <CardContent className='p-4'>
+            <img
+              src={post.imageUrl}
+              alt='Instagram post'
+              className='w-full h-64 object-cover mb-4'
+            />
+            <p className='text-xs text-gray-500'>Likes: {post.likes}</p>
+          </CardContent>
+        </Card>
+      </Link>
+      <p className='text-sm text-gray-600'>{post.caption}</p>
+    </div>
+  );
+};
+
+export default PostCard;
