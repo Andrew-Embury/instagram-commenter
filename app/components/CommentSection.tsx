@@ -7,6 +7,7 @@ import LoadMoreComments from '@/app/components/LoadMoreComments';
 import { generateAIResponse } from '@/app/lib/ai';
 import { Button } from '@/app/components/ui/button';
 import SuccessModal from './SuccessModal';
+import ConfirmationDialog from './ConfirmationDialog';
 
 interface CommentSectionProps {
   initialComments: InstagramComment[];
@@ -25,6 +26,12 @@ const CommentSection: React.FC<CommentSectionProps> = ({
   const [aiReplies, setAiReplies] = useState<{ [key: string]: string }>({});
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
+  const [isConfirmationOpen, setIsConfirmationOpen] = useState(false);
+  const [pendingReply, setPendingReply] = useState<{
+    commentId: string;
+    parentId: string | null;
+    editedReply: string;
+  } | null>(null);
 
   const handleGenerateAllAIReplies = async () => {
     setIsGenerating(true);
@@ -52,75 +59,90 @@ const CommentSection: React.FC<CommentSectionProps> = ({
 
   const handlePostAIReply = useCallback(
     async (commentId: string, parentId: string | null, editedReply: string) => {
-      try {
-        const response = await fetch('/api/post-reply', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            postId,
-            commentId,
-            parentId,
-            replyText: editedReply,
-          }),
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'Failed to post reply');
-        }
-
-        // Update local state to reflect the posted reply
-        setComments((prevComments) => {
-          const updateComment = (
-            comment: InstagramComment
-          ): InstagramComment => {
-            if (comment.id === (parentId || commentId)) {
-              return {
-                ...comment,
-                replies: [
-                  ...(comment.replies || []),
-                  {
-                    id: Date.now().toString(), // Temporary ID
-                    text: editedReply,
-                    username: 'Your Instagram Username', // Replace with actual username
-                    timestamp: new Date().toISOString(),
-                  },
-                ],
-              };
-            }
-            if (comment.replies) {
-              return {
-                ...comment,
-                replies: comment.replies.map(updateComment),
-              };
-            }
-            return comment;
-          };
-
-          return prevComments.map(updateComment);
-        });
-
-        // Remove the posted reply from aiReplies
-        setAiReplies((prev) => {
-          const newAiReplies = { ...prev };
-          delete newAiReplies[commentId];
-          return newAiReplies;
-        });
-
-        setIsSuccessModalOpen(true);
-      } catch (error) {
-        console.error('Failed to post AI response:', error);
-        if (error instanceof Error) {
-          alert(`Error: ${error.message}`);
-        } else {
-          alert('An unexpected error occurred');
-        }
-      }
+      setPendingReply({ commentId, parentId, editedReply });
+      setIsConfirmationOpen(true);
     },
-    [postId]
+    []
   );
+
+  const confirmPostReply = async () => {
+    setIsConfirmationOpen(false);
+    if (!pendingReply) return;
+
+    const { commentId, parentId, editedReply } = pendingReply;
+
+    try {
+      const response = await fetch('/api/post-reply', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          postId,
+          commentId,
+          parentId,
+          replyText: editedReply,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to post reply');
+      }
+
+      // Update local state to reflect the posted reply
+      setComments((prevComments) => {
+        const updateComment = (comment: InstagramComment): InstagramComment => {
+          if (comment.id === (parentId || commentId)) {
+            return {
+              ...comment,
+              replies: [
+                ...(comment.replies || []),
+                {
+                  id: Date.now().toString(), // Temporary ID
+                  text: editedReply,
+                  username: 'Your Instagram Username', // Replace with actual username
+                  timestamp: new Date().toISOString(),
+                },
+              ],
+            };
+          }
+          if (comment.replies) {
+            return {
+              ...comment,
+              replies: comment.replies.map(updateComment),
+            };
+          }
+          return comment;
+        };
+
+        return prevComments.map(updateComment);
+      });
+
+      // Remove the posted reply from aiReplies
+      setAiReplies((prev) => {
+        const newAiReplies = { ...prev };
+        delete newAiReplies[commentId];
+        return newAiReplies;
+      });
+
+      setIsSuccessModalOpen(true);
+    } catch (error) {
+      console.error('Failed to post AI response:', error);
+      if (error instanceof Error) {
+        alert(`Error: ${error.message}`);
+      } else {
+        alert('An unexpected error occurred');
+      }
+    }
+
+    setPendingReply(null);
+  };
+
+  const cancelPostReply = () => {
+    setIsConfirmationOpen(false);
+    setPendingReply(null);
+  };
 
   const closeSuccessModal = () => {
     setIsSuccessModalOpen(false);
@@ -170,6 +192,11 @@ const CommentSection: React.FC<CommentSectionProps> = ({
         />
       )}
       <SuccessModal isOpen={isSuccessModalOpen} onClose={closeSuccessModal} />
+      <ConfirmationDialog
+        isOpen={isConfirmationOpen}
+        onConfirm={confirmPostReply}
+        onCancel={cancelPostReply}
+      />
     </div>
   );
 };

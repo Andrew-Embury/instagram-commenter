@@ -23,10 +23,16 @@ const CommentThread: React.FC<CommentThreadProps> = memo(
     const renderReplies = (replies: InstagramComment[] | undefined) => {
       if (!replies || replies.length === 0) return null;
 
-      return replies.map((reply, index) => (
+      // Sort replies with the newest at the bottom
+      const sortedReplies = [...replies].sort(
+        (a, b) =>
+          new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+      );
+
+      return sortedReplies.map((reply, index) => (
         <div key={reply.id} className='ml-8 mt-4'>
           <Comment comment={reply} />
-          {index === replies.length - 1 && (
+          {index === sortedReplies.length - 1 && (
             <AIReplyBox
               aiReply={aiReplies[reply.id] || ''}
               onPostReply={(editedReply) =>
