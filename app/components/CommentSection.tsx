@@ -7,7 +7,7 @@ import { Button } from '@/app/components/ui/button';
 import SuccessModal from './SuccessModal';
 import ConfirmationDialog from './ConfirmationDialog';
 //import { postAIResponse } from '@/app/lib/ai';
-import { postReplyToInstagram } from '@/app/lib/instagram';
+//import { postReplyToInstagram } from '@/app/lib/instagram';
 
 interface CommentSectionProps {
   initialComments: InstagramComment[];

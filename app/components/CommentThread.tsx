@@ -20,8 +20,6 @@ interface CommentThreadProps {
 
 const CommentThread: React.FC<CommentThreadProps> = ({
   comment,
-  postId,
-  postCaption,
   aiReply,
   onPostAIReply,
 }) => {

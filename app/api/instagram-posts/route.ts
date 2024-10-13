@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { fetchInstagramPosts } from '@/lib/instagram';
+import { fetchInstagramPosts } from '@/app/lib/instagram';
 
 export async function GET() {
   try {

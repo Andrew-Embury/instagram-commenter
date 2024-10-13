@@ -1,7 +1,4 @@
-export async function generateAIReply(
-  postId: string,
-  parentCommentId: string
-): Promise<string> {
+export async function generateAIReply(): Promise<string> {
   // This is a mocked AI reply
   return 'This is a placeholder AI reply. In a real implementation, this would be generated based on the post and parent comment.';
 }

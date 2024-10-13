@@ -16,13 +16,19 @@ export async function fetchInstagramPosts(): Promise<Post[]> {
     throw new Error('Failed to fetch Instagram posts');
   }
 
-  const data = await response.json();
+  const data: { data: InstagramApiPost[] } = await response.json();
 
-  return data.data.map((post: any) => ({
+  return data.data.map((post) => ({
     id: post.id,
-    imageUrl: post.media_type === 'VIDEO' ? post.thumbnail_url : post.media_url,
+    imageUrl:
+      post.media_type === 'VIDEO'
+        ? post.thumbnail_url || post.media_url
+        : post.media_url,
     caption: post.caption || 'There is no caption for this post',
     likes: post.like_count || 0,
+    mediaType: post.media_type,
+    permalink: post.permalink,
+    timestamp: post.timestamp,
   }));
 }
 
@@ -49,11 +55,14 @@ export async function fetchInstagramPost(postId: string): Promise<Post> {
     throw new Error('Failed to fetch Instagram post');
   }
 
-  const post = await response.json();
+  const post: InstagramApiPost = await response.json();
 
   return {
     id: post.id,
-    imageUrl: post.media_type === 'VIDEO' ? post.thumbnail_url : post.media_url,
+    imageUrl:
+      post.media_type === 'VIDEO'
+        ? post.thumbnail_url || post.media_url
+        : post.media_url,
     caption: post.caption || 'There is no caption for this post',
     likes: post.like_count || 0,
     mediaType: post.media_type,
@@ -86,19 +95,19 @@ export async function fetchInstagramComments(
       throw new Error('Failed to fetch Instagram comments');
     }
 
-    const data = await response.json();
+    const data: InstagramApiCommentResponse = await response.json();
 
-    const comments: InstagramComment[] = data.data.map((comment: any) => ({
+    const comments: InstagramComment[] = data.data.map((comment) => ({
       id: comment.id,
       text: comment.text,
       username: comment.username,
-      timestamp: new Date(comment.timestamp).toISOString(),
+      timestamp: comment.timestamp,
       replies: comment.replies
-        ? comment.replies.data.map((reply: any) => ({
+        ? comment.replies.data.map((reply) => ({
             id: reply.id,
             text: reply.text,
             username: reply.username,
-            timestamp: new Date(reply.timestamp).toISOString(),
+            timestamp: reply.timestamp,
           }))
         : [],
     }));
@@ -137,15 +146,59 @@ export async function postReplyToInstagram(
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
+      const errorData: InstagramApiError = await response.json();
       console.error('Instagram API Error:', errorData);
       throw new Error(`Failed to post reply: ${errorData.error.message}`);
     }
 
-    const responseData = await response.json();
+    const responseData: InstagramApiReplyResponse = await response.json();
     console.log('Instagram API Response:', responseData);
   } catch (error) {
     console.error('Error in postReplyToInstagram:', error);
     throw error;
   }
+}
+
+// New type definitions
+interface InstagramApiPost {
+  id: string;
+  caption?: string;
+  media_type: string;
+  media_url: string;
+  thumbnail_url?: string;
+  permalink: string;
+  timestamp: string;
+  like_count?: number;
+}
+
+interface InstagramApiComment {
+  id: string;
+  text: string;
+  username: string;
+  timestamp: string;
+  replies?: {
+    data: InstagramApiComment[];
+  };
+}
+
+interface InstagramApiCommentResponse {
+  data: InstagramApiComment[];
+  paging?: {
+    cursors?: {
+      after?: string;
+    };
+  };
+}
+
+interface InstagramApiError {
+  error: {
+    message: string;
+    type: string;
+    code: number;
+    fbtrace_id: string;
+  };
+}
+
+interface InstagramApiReplyResponse {
+  id: string;
 }

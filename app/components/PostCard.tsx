@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { Post } from '@/types/instagram';
 import { Card, CardContent } from '@/app/components/ui/card';
+import Image from 'next/image';
 
 interface PostCardProps {
   post: Post;
@@ -15,7 +16,7 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
       <Link href={`/dashboard/posts/${post.id}`}>
         <Card className='cursor-pointer hover:shadow-lg transition-shadow'>
           <CardContent className='p-4'>
-            <img
+            <Image
               src={post.imageUrl}
               alt='Instagram post'
               className='w-full h-64 object-cover mb-4'

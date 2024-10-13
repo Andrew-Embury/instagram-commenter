@@ -18,9 +18,14 @@ export default async function PostPage({
   let initialComments;
 
   try {
-    post = await fetchInstagramPost(params.postId);
-    const { comments } = await fetchInstagramComments(params.postId);
-    initialComments = comments;
+    // Fetch post and comments concurrently
+    const [postData, commentsData] = await Promise.all([
+      fetchInstagramPost(params.postId),
+      fetchInstagramComments(params.postId),
+    ]);
+
+    post = postData;
+    initialComments = commentsData.comments;
   } catch (error) {
     console.error('Error fetching post or comments:', error);
     return <div>Error loading post. Please try again later.</div>;
