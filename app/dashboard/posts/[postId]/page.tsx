@@ -38,10 +38,10 @@ export default async function PostPage({
   }
 
   return (
-    <div className='space-y-6'>
-      <h2 className='text-2xl font-bold'>Post Details</h2>
-      <div className='space-y-2'>
-        <Card>
+    <div className='space-y-8 max-w-4xl mx-auto'>
+      <h2 className='text-3xl font-bold text-gray-800'>Post Details</h2>
+      <div className='space-y-4'>
+        <Card className='overflow-hidden shadow-lg'>
           <CardContent className='p-0'>
             <div className='relative aspect-square w-full'>
               <Image
@@ -53,18 +53,19 @@ export default async function PostPage({
                 className='rounded-t-lg'
               />
             </div>
-            <div className='flex justify-end items-center p-4'>
-              <div className='flex items-center'>
-                <Heart className='w-4 h-4 mr-1' />
-                {post.likes}
+            <div className='flex justify-between items-center p-4 bg-gray-50'>
+              <p className='text-sm text-gray-600'>{post.timestamp}</p>
+              <div className='flex items-center text-pink-500'>
+                <Heart className='w-5 h-5 mr-1 fill-current' />
+                <span>{post.likes}</span>
               </div>
             </div>
           </CardContent>
         </Card>
-        <p className='text-sm text-gray-600'>{post.caption}</p>
+        <p className='text-lg text-gray-700'>{post.caption}</p>
       </div>
 
-      <h2>Comments</h2>
+      <h3 className='text-2xl font-semibold text-gray-800'>Comments</h3>
       <CommentSection
         initialComments={initialComments}
         postId={params.postId}

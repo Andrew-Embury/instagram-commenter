@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { Button } from '@/app/components/ui/button';
+import { Textarea } from '@/app/components/ui/textarea';
 
 interface AIReplyBoxProps {
   aiReply: string;
@@ -17,22 +19,23 @@ const AIReplyBox: React.FC<AIReplyBoxProps> = ({ aiReply, onPostReply }) => {
   }, [aiReply]);
 
   return (
-    <div className='ai-reply-box'>
-      <textarea
+    <div className='space-y-2'>
+      <Textarea
         value={editedReply}
         onChange={(e) => setEditedReply(e.target.value)}
         rows={4}
-        className='w-full p-2 border rounded'
         placeholder='No reply generated yet'
+        className='w-full p-2 border rounded'
         readOnly={!aiReply}
       />
       {aiReply && (
-        <button
+        <Button
           onClick={() => onPostReply(editedReply)}
-          className='mt-2 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600'
+          className='w-full'
+          variant='default'
         >
           Post Reply
-        </button>
+        </Button>
       )}
     </div>
   );

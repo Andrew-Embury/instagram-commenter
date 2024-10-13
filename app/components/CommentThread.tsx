@@ -4,6 +4,7 @@ import React, { memo } from 'react';
 import Comment from './Comment';
 import AIReplyBox from './AIReplyBox';
 import { InstagramComment } from '@/types/instagram';
+import { Card, CardContent } from '@/app/components/ui/card';
 
 interface CommentThreadProps {
   comment: InstagramComment;
@@ -26,7 +27,7 @@ const CommentThread: React.FC<CommentThreadProps> = memo(
       );
 
       return sortedReplies.map((reply, index) => (
-        <div key={reply.id} className='ml-8 mt-2'>
+        <div key={reply.id} className='ml-8 mt-4'>
           <Comment comment={reply} />
           {index === sortedReplies.length - 1 && (
             <AIReplyBox
@@ -41,20 +42,22 @@ const CommentThread: React.FC<CommentThreadProps> = memo(
     };
 
     return (
-      <div className='comment-thread mb-4'>
-        <Comment comment={comment} />
-        {renderReplies(comment.replies)}
-        {(!comment.replies || comment.replies.length === 0) && (
-          <div className='ml-8 mt-2'>
-            <AIReplyBox
-              aiReply={aiReplies[comment.id] || ''}
-              onPostReply={(editedReply) =>
-                onPostAIReply(comment.id, editedReply)
-              }
-            />
-          </div>
-        )}
-      </div>
+      <Card className='overflow-hidden'>
+        <CardContent className='p-4 space-y-4'>
+          <Comment comment={comment} />
+          {renderReplies(comment.replies)}
+          {(!comment.replies || comment.replies.length === 0) && (
+            <div className='mt-4'>
+              <AIReplyBox
+                aiReply={aiReplies[comment.id] || ''}
+                onPostReply={(editedReply) =>
+                  onPostAIReply(comment.id, editedReply)
+                }
+              />
+            </div>
+          )}
+        </CardContent>
+      </Card>
     );
   }
 );

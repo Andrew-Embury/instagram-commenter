@@ -5,6 +5,7 @@ import CommentThread from './CommentThread';
 import { InstagramComment } from '@/types/instagram';
 import LoadMoreComments from '@/app/components/LoadMoreComments';
 import { generateAIResponse, postAIResponse } from '@/app/lib/ai';
+import { Button } from '@/app/components/ui/button';
 
 interface CommentSectionProps {
   initialComments: InstagramComment[];
@@ -89,24 +90,27 @@ const CommentSection: React.FC<CommentSectionProps> = ({
   );
 
   return (
-    <div>
-      <button
+    <div className='space-y-6'>
+      <Button
         onClick={handleGenerateAllAIReplies}
         disabled={isGenerating}
-        className='mb-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-blue-300'
+        className='w-full'
+        variant={isGenerating ? 'outline' : 'default'}
       >
         {isGenerating ? 'Generating...' : 'Generate AI Replies'}
-      </button>
-      {sortedTopLevelComments.map((comment) => (
-        <CommentThread
-          key={comment.id}
-          comment={comment}
-          postId={postId}
-          postCaption={postCaption}
-          aiReplies={aiReplies}
-          onPostAIReply={handlePostAIReply}
-        />
-      ))}
+      </Button>
+      <div className='space-y-6'>
+        {sortedTopLevelComments.map((comment) => (
+          <CommentThread
+            key={comment.id}
+            comment={comment}
+            postId={postId}
+            postCaption={postCaption}
+            aiReplies={aiReplies}
+            onPostAIReply={handlePostAIReply}
+          />
+        ))}
+      </div>
       {initialNextCursor && (
         <LoadMoreComments
           postId={postId}
