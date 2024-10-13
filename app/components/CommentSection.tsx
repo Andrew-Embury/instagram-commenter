@@ -6,6 +6,8 @@ import { InstagramComment } from '@/types/instagram';
 import LoadMoreComments from '@/app/components/LoadMoreComments';
 import { generateAIResponse, postAIResponse } from '@/app/lib/ai';
 import { Button } from '@/app/components/ui/button';
+import { postReplyToInstagram } from '@/app/lib/instagram'; // You'll need to implement this function
+import SuccessModal from './SuccessModal';
 
 interface CommentSectionProps {
   initialComments: InstagramComment[];
@@ -23,6 +25,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
   const [comments, setComments] = useState(initialComments);
   const [aiReplies, setAiReplies] = useState<{ [key: string]: string }>({});
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
 
   const handleGenerateAllAIReplies = async () => {
     setIsGenerating(true);
@@ -71,13 +74,49 @@ const CommentSection: React.FC<CommentSectionProps> = ({
   const handlePostAIReply = useCallback(
     async (commentId: string, editedReply: string) => {
       try {
-        await postAIResponse(commentId, editedReply);
-        // You might want to update the comments state here
-      } catch (error) {
+        const response = await fetch('/api/post-reply', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ postId, commentId, replyText: editedReply }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to post reply');
+        }
+
+        // Update local state to reflect the posted reply
+        setComments((prevComments) =>
+          prevComments.map((comment) =>
+            comment.id === commentId
+              ? {
+                  ...comment,
+                  replies: [
+                    ...(comment.replies || []),
+                    {
+                      id: Date.now().toString(), // Temporary ID
+                      text: editedReply,
+                      username: 'Your Instagram Username', // Replace with actual username
+                      timestamp: new Date().toISOString(),
+                    },
+                  ],
+                }
+              : comment
+          )
+        );
+        setIsSuccessModalOpen(true);
+      } catch (error: unknown) {
         console.error('Failed to post AI response:', error);
+        if (error instanceof Error) {
+          alert(`Error: ${error.message}`);
+        } else {
+          alert('An unexpected error occurred');
+        }
       }
     },
-    []
+    [postId]
   );
 
   const topLevelComments = comments.filter(
@@ -119,6 +158,10 @@ const CommentSection: React.FC<CommentSectionProps> = ({
           onPostAIReply={handlePostAIReply}
         />
       )}
+      <SuccessModal
+        isOpen={isSuccessModalOpen}
+        onClose={() => setIsSuccessModalOpen(false)}
+      />
     </div>
   );
 };

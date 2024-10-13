@@ -104,3 +104,40 @@ export async function fetchInstagramComments(
     next: data.paging?.cursors?.after,
   };
 }
+
+export async function postReplyToInstagram(
+  postId: string,
+  commentId: string,
+  replyText: string
+): Promise<void> {
+  const ACCESS_TOKEN = process.env.INSTAGRAM_ACCESS_TOKEN;
+  if (!ACCESS_TOKEN) {
+    throw new Error('Instagram access token is not set');
+  }
+
+  const url = `https://graph.instagram.com/v20.0/${commentId}/replies`;
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        message: replyText,
+        access_token: ACCESS_TOKEN,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('Instagram API Error:', errorData);
+      throw new Error(`Failed to post reply: ${errorData.error.message}`);
+    }
+
+    const responseData = await response.json();
+    console.log('Instagram API Response:', responseData);
+  } catch (error) {
+    console.error('Error in postReplyToInstagram:', error);
+    throw error;
+  }
+}
