@@ -12,4 +12,5 @@ export interface Post {
   imageUrl: string;
   caption: string;
   likes: number;
+  mediaType: string;
 }

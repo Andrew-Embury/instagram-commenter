@@ -9,7 +9,7 @@ export async function fetchInstagramPosts(): Promise<Post[]> {
   }
 
   const response = await fetch(
-    `${INSTAGRAM_API_BASE_URL}/me/media?fields=id,caption,media_type,media_url,thumbnail_url,permalink,timestamp,like_count&access_token=${ACCESS_TOKEN}`
+    `${INSTAGRAM_API_BASE_URL}/me/media?fields=id,caption,media_type,media_url,permalink,timestamp,like_count&access_token=${ACCESS_TOKEN}`
   );
 
   if (!response.ok) {
@@ -22,7 +22,7 @@ export async function fetchInstagramPosts(): Promise<Post[]> {
   return data.data.map((post: any) => ({
     id: post.id,
     imageUrl: post.media_type === 'VIDEO' ? post.thumbnail_url : post.media_url,
-    caption: post.caption || '',
+    caption: post.caption || 'There is no caption for this post',
     likes: post.like_count || 0,
   }));
 }
@@ -32,8 +32,18 @@ export async function fetchInstagramPost(postId: string): Promise<Post> {
     throw new Error('Instagram access token is not set');
   }
 
+  const fields = [
+    'id',
+    'caption',
+    'media_type',
+    'media_url',
+    'permalink',
+    'timestamp',
+    'like_count',
+  ].join(',');
+
   const response = await fetch(
-    `${INSTAGRAM_API_BASE_URL}/${postId}?fields=id,caption,media_type,media_url,thumbnail_url,permalink,timestamp,like_count&access_token=${ACCESS_TOKEN}`
+    `${INSTAGRAM_API_BASE_URL}/${postId}?fields=${fields}&access_token=${ACCESS_TOKEN}`
   );
 
   if (!response.ok) {
@@ -48,6 +58,9 @@ export async function fetchInstagramPost(postId: string): Promise<Post> {
     imageUrl: post.media_type === 'VIDEO' ? post.thumbnail_url : post.media_url,
     caption: post.caption || 'There is no caption for this post',
     likes: post.like_count || 0,
+    mediaType: post.media_type,
+    permalink: post.permalink,
+    timestamp: post.timestamp,
   };
 }
 
