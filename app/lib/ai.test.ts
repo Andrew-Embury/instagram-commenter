@@ -1,5 +1,5 @@
 import '@jest/globals';
-import axios from 'axios';
+// import axios from 'axios';
 
 // Mock the entire ai module
 jest.mock('./ai');

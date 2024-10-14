@@ -1,5 +1,5 @@
 import '@jest/globals';
-import { Post } from '@/types/instagram';
+// import { Post } from '@/types/instagram';
 
 // Mock the entire instagram module
 jest.mock('./instagram', () => ({
