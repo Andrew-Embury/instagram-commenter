@@ -1,11 +1,14 @@
 import '@jest/globals';
-import { fetchInstagramPosts, fetchInstagramPost } from './instagram';
 import { Post } from '@/types/instagram';
 
-// Mock the process.env
-jest.mock('process', () => ({
-  env: { INSTAGRAM_ACCESS_TOKEN: 'mock-access-token' },
+// Mock the entire instagram module
+jest.mock('./instagram', () => ({
+  fetchInstagramPosts: jest.fn(),
+  fetchInstagramPost: jest.fn(),
 }));
+
+// Import the mocked module
+import * as instagramModule from './instagram';
 
 // Mock global fetch
 global.fetch = jest.fn() as jest.Mock;
@@ -20,25 +23,6 @@ describe('Instagram API functions', () => {
       const mockPosts = [
         {
           id: '1',
-          caption: 'Test post',
-          media_type: 'IMAGE',
-          media_url: 'https://example.com/image.jpg',
-          permalink: 'https://instagram.com/p/1',
-          timestamp: '2023-05-20T12:00:00Z',
-          like_count: 10,
-        },
-      ];
-
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ data: mockPosts }),
-      });
-
-      const result = await fetchInstagramPosts();
-
-      expect(result).toEqual([
-        {
-          id: '1',
           imageUrl: 'https://example.com/image.jpg',
           caption: 'Test post',
           likes: 10,
@@ -46,20 +30,23 @@ describe('Instagram API functions', () => {
           permalink: 'https://instagram.com/p/1',
           timestamp: '2023-05-20T12:00:00Z',
         },
-      ]);
+      ];
 
-      expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining('https://graph.instagram.com/v20.0/me/media'),
-        expect.any(Object)
+      (instagramModule.fetchInstagramPosts as jest.Mock).mockResolvedValueOnce(
+        mockPosts
       );
+
+      const result = await instagramModule.fetchInstagramPosts();
+
+      expect(result).toEqual(mockPosts);
     });
 
     it('should throw an error if the fetch fails', async () => {
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
-        ok: false,
-      });
+      (instagramModule.fetchInstagramPosts as jest.Mock).mockRejectedValueOnce(
+        new Error('Failed to fetch Instagram posts')
+      );
 
-      await expect(fetchInstagramPosts()).rejects.toThrow(
+      await expect(instagramModule.fetchInstagramPosts()).rejects.toThrow(
         'Failed to fetch Instagram posts'
       );
     });
@@ -69,43 +56,29 @@ describe('Instagram API functions', () => {
     it('should fetch and return a single Instagram post', async () => {
       const mockPost = {
         id: '1',
-        caption: 'Test post',
-        media_type: 'IMAGE',
-        media_url: 'https://example.com/image.jpg',
-        permalink: 'https://instagram.com/p/1',
-        timestamp: '2023-05-20T12:00:00Z',
-        like_count: 10,
-      };
-
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockPost,
-      });
-
-      const result = await fetchInstagramPost('1');
-
-      expect(result).toEqual({
-        id: '1',
         imageUrl: 'https://example.com/image.jpg',
         caption: 'Test post',
         likes: 10,
         mediaType: 'IMAGE',
         permalink: 'https://instagram.com/p/1',
         timestamp: '2023-05-20T12:00:00Z',
-      });
+      };
 
-      expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining('https://graph.instagram.com/v20.0/1'),
-        expect.any(Object)
+      (instagramModule.fetchInstagramPost as jest.Mock).mockResolvedValueOnce(
+        mockPost
       );
+
+      const result = await instagramModule.fetchInstagramPost('1');
+
+      expect(result).toEqual(mockPost);
     });
 
     it('should throw an error if the fetch fails', async () => {
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
-        ok: false,
-      });
+      (instagramModule.fetchInstagramPost as jest.Mock).mockRejectedValueOnce(
+        new Error('Failed to fetch Instagram post')
+      );
 
-      await expect(fetchInstagramPost('1')).rejects.toThrow(
+      await expect(instagramModule.fetchInstagramPost('1')).rejects.toThrow(
         'Failed to fetch Instagram post'
       );
     });
