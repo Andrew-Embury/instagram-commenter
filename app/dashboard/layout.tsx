@@ -3,7 +3,7 @@
 import React from 'react';
 import { useState } from 'react';
 import Link from 'next/link';
-import { Menu, Image as ImageIcon } from 'lucide-react';
+import { Menu, Image as ImageIcon, LogOut } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/app/components/ui/sheet';
 import { usePathname, useRouter } from 'next/navigation';
@@ -24,6 +24,23 @@ export default function DashboardLayout({
   const pathname = usePathname();
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
+
+  const handleLogout = async () => {
+    try {
+      const response = await fetch('/api/auth/logout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      if (response.ok) {
+        router.push('/login');
+      } else {
+        console.error('Logout failed');
+      }
+    } catch (error) {
+      console.error('Error during logout:', error);
+    }
+  };
 
   const NavLink = ({ icon, children, href, onClick }: NavLinkProps) => (
     <Link
@@ -53,6 +70,15 @@ export default function DashboardLayout({
           >
             All Posts
           </NavLink>
+        </li>
+        <li>
+          <button
+            onClick={handleLogout}
+            className='flex w-full items-center rounded-lg p-2 text-gray-900 hover:bg-gray-200'
+          >
+            <LogOut className='mr-2 h-5 w-5' />
+            Logout
+          </button>
         </li>
       </ul>
     </nav>
